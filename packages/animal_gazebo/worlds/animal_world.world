@@ -1,0 +1,22 @@
+<?xml version="1.0" ?>
+<sdf version="1.6">
+  <world name="animal_world">
+    <!-- Sun light source -->
+    <include>
+      <uri>model://sun</uri>
+    </include>
+
+    <!-- Ground plane -->
+    <include>
+      <uri>model://ground_plane</uri>
+    </include>
+
+    <!-- Basic objects for initial test -->
+    <include>
+      <name>standing_person</name>
+      <uri>model://person_standing</uri>
+      <static>true</static>
+      <pose>2 0 0 0 0 0</pose>
+    </include>
+  </world>
+</sdf>
