@@ -22,7 +22,7 @@ def generate_launch_description():
         Node(
             package='gazebo_ros',
             executable='spawn_entity.py',
-            arguments=['-entity', 'animal_robot', '-file', urdf],
+            arguments=['-entity', 'animal_robot', '-file', urdf, '-z', '0.1'],
             output='screen'),
         Node(
             package='robot_state_publisher',
