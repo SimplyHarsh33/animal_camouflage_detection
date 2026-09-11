@@ -1,0 +1,31 @@
+<?xml version="1.0" ?>
+<sdf version="1.6">
+  <model name="rock">
+    <static>true</static>
+    <link name="base_link">
+      <collision name="collision">
+        <geometry>
+          <mesh>
+            <uri>model://rock/meshes/FallingRock01_Collider.dae</uri>
+          </mesh>
+        </geometry>
+      </collision>
+      <visual name="visual">
+        <geometry>
+          <mesh>
+            <uri>model://rock/meshes/FallingRock01.dae</uri>
+          </mesh>
+        </geometry>
+        <material>
+          <diffuse>1.0 1.0 1.0</diffuse>
+          <specular>0.2 0.2 0.2</specular>
+          <script>
+            <uri>model://rock/materials/scripts</uri>
+            <uri>model://rock/materials/textures</uri>
+            <name>FallingRocks/FallingRocks_Diffuse</name>
+          </script>
+        </material>
+      </visual>
+    </link>
+  </model>
+</sdf>
