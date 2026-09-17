@@ -18,11 +18,8 @@ in real-time using deep learning perception.
 | **Detection** | Real-time bounding box on `/camera/image_raw` |
 | **Hardware** | Simulation Only — No Physical Hardware Required |
 
----
-
 ## 🔁 How It Works
-
-```
+---
 [ Gazebo World — Animals hidden in terrain ]
                     │
        [ Simulated Robot + RGB Camera Plugin ]
@@ -36,9 +33,7 @@ in real-time using deep learning perception.
                     ▼
     [ Output: Bounding Box + Label + Confidence ]
            Displayed on live OpenCV window
-```
 
----
 
 ## 🗂️ Project Folder Structure
 
