@@ -20,15 +20,15 @@ def generate_launch_description():
             default_value='true',
             description='Use simulation clock if true'),
         Node(
-            package='gazebo_ros',
-            executable='spawn_entity.py',
-            arguments=['-entity', 'animal_robot', '-file', urdf, '-z', '0.1',
-                       '-timeout', '120'],
-            output='screen'),
-        Node(
             package='robot_state_publisher',
             executable='robot_state_publisher',
             name='robot_state_publisher',
             output='screen',
             parameters=[{'use_sim_time': use_sim_time, 'robot_description': robot_desc}]),
+        Node(
+            package='gazebo_ros',
+            executable='spawn_entity.py',
+            arguments=['-entity', 'animal_robot', '-topic', 'robot_description', '-z', '0.1',
+                       '-timeout', '120'],
+            output='screen'),
     ])

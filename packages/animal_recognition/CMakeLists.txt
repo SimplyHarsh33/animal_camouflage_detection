@@ -8,6 +8,13 @@ install(
     scripts/ros_recognition_yolo.py
   DESTINATION
     lib/${PROJECT_NAME}
+)
+
+install(
+  DIRECTORY
+    launch
+  DESTINATION
+    share/${PROJECT_NAME}
   OPTIONAL
 )
 

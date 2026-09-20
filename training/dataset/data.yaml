@@ -1,0 +1,7 @@
+# YOLOv8 Camouflage Dataset Configuration
+path: /workspace/training/dataset
+train: images/train
+val: images/val
+
+names:
+  0: deer

@@ -4,14 +4,13 @@ material Animal/Deer
   {
     pass
     {
-      ambient 0.85 0.85 0.85 1.0
-      diffuse 0.9 0.9 0.9 1.0
-      specular 0.1 0.1 0.1 1.0 12.5
+      ambient 0.90 0.90 0.90 1.0
+      diffuse 1.0 1.0 1.0 1.0
+      specular 0.05 0.05 0.05 1.0 8.0
 
       texture_unit
       {
-        texture deer_texture.png
-        scale 0.6 0.6
+        texture deer_basecolor.jpg
       }
     }
   }
