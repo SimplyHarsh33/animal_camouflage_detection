@@ -11,11 +11,17 @@ def generate_launch_description():
     pkg_animal_gazebo = get_package_share_directory('animal_gazebo')
 
     world = LaunchConfiguration('world')
+    gui = LaunchConfiguration('gui')
 
     declare_world_cmd = DeclareLaunchArgument(
         'world',
         default_value=os.path.join(pkg_animal_gazebo, 'worlds', 'animal_world.world'),
         description='SDF world file path')
+
+    declare_gui_cmd = DeclareLaunchArgument(
+        'gui',
+        default_value='false',
+        description='Set to "true" to open Gazebo 3D GUI window, "false" for headless (fast)')
 
     gazebo = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
@@ -23,11 +29,12 @@ def generate_launch_description():
         ),
         launch_arguments={
             'world': world,
-            'extra_gazebo_args': '-s libgazebo_ros_factory.so'
+            'gui': gui,
         }.items()
     )
 
     return LaunchDescription([
         declare_world_cmd,
+        declare_gui_cmd,
         gazebo
     ])

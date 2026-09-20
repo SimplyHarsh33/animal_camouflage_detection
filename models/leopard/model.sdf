@@ -8,16 +8,26 @@
         <geometry>
           <mesh>
             <uri>model://leopard/meshes/leopard.obj</uri>
-            <scale>2.0 2.0 2.0</scale>
+            <!-- Cat mesh is ~0.34m tall at scale 1.0.
+                 Scaling to 4.0 makes it ~1.36m — realistic large feline size -->
+            <scale>4.0 4.0 4.0</scale>
           </mesh>
         </geometry>
+        <material>
+          <script>
+            <uri>model://leopard/materials/scripts</uri>
+            <uri>model://leopard/materials/textures</uri>
+            <name>Animal/Leopard</name>
+          </script>
+        </material>
       </visual>
+      <!-- Simplified collision bounding box for physics performance -->
       <collision name="collision">
+        <pose>0 0 0.5 0 0 0</pose>
         <geometry>
-          <mesh>
-            <uri>model://leopard/meshes/leopard.obj</uri>
-            <scale>2.0 2.0 2.0</scale>
-          </mesh>
+          <box>
+            <size>1.5 0.5 1.0</size>
+          </box>
         </geometry>
       </collision>
     </link>

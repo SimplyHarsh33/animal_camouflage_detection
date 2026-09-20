@@ -1,84 +1,115 @@
 <?xml version="1.0" ?>
 <sdf version="1.6">
-  <world name="animal_world">
-    <!-- Sun light source with natural daylight angles -->
+  <world name="leopard_camouflage_world">
+
+    <!-- ===== ENVIRONMENT ===== -->
     <include>
       <uri>model://sun</uri>
     </include>
 
-    <!-- Ground plane -->
     <include>
       <uri>model://ground_plane</uri>
     </include>
 
-    <!-- 1. Realistic 3D Camouflaged Deer (Forward-Left) -->
-    <include>
-      <name>deer</name>
-      <uri>model://deer</uri>
-      <static>true</static>
-      <pose>4.2 1.8 0 0 0 -2.2</pose>
-    </include>
+    <!-- ===== LEOPARD: 3 Strategic Positions for Camouflage Testing ===== -->
 
-    <!-- 2. Realistic 3D Camouflaged Fox (Forward-Right near rock) -->
+    <!--
+      Scenario 1: CLOSE RANGE (2.5 m)
+      Leopard crouching directly ahead, partially behind a rock.
+      Expected: Easy detection. Validates baseline model confidence.
+    -->
     <include>
-      <name>fox</name>
-      <uri>model://fox</uri>
-      <static>true</static>
-      <pose>3.0 -1.2 0 0 0 2.3</pose>
-    </include>
-
-    <!-- 3. Realistic 3D Camouflaged Rabbit (Close ground-level target) -->
-    <include>
-      <name>rabbit</name>
-      <uri>model://rabbit</uri>
-      <static>true</static>
-      <pose>2.2 0.7 0 0 0 -1.2</pose>
-    </include>
-
-    <!-- 4. Realistic 3D Predator (Leopard/Cat in central field of view) -->
-    <include>
-      <name>leopard</name>
+      <name>leopard_close</name>
       <uri>model://leopard</uri>
       <static>true</static>
-      <pose>4.8 -0.2 0 0 0 3.1415</pose>
+      <pose>2.5 0.0 0 0 0 3.1415</pose>
     </include>
 
-    <!-- 5. Natural Environment: Rocks for Camouflage Concealment -->
+    <!-- Rock providing partial concealment (close scenario) -->
     <include>
-      <name>rock_fox_cover</name>
+      <name>rock_close_cover</name>
       <uri>model://rock</uri>
       <static>true</static>
-      <pose>3.3 -1.5 0 0 0 0.6</pose>
+      <pose>2.9 0.3 0 0 0 1.0</pose>
     </include>
 
+    <!--
+      Scenario 2: MEDIUM RANGE (5 m) — Forward-Left
+      Leopard crouching between an oak tree and a boulder.
+      Expected: Moderate challenge. Tests partial occlusion handling.
+    -->
     <include>
-      <name>rock_deer_cover</name>
+      <name>leopard_medium</name>
+      <uri>model://leopard</uri>
+      <static>true</static>
+      <pose>5.0 2.0 0 0 0 -2.2</pose>
+    </include>
+
+    <!-- Rock and tree providing natural concealment (medium scenario) -->
+    <include>
+      <name>rock_medium_cover</name>
       <uri>model://rock</uri>
       <static>true</static>
-      <pose>4.6 2.3 0 0 0 -0.8</pose>
+      <pose>5.4 2.5 0 0 0 -0.5</pose>
     </include>
 
-    <!-- 6. Natural Environment: Oak & Pine Trees -->
     <include>
-      <name>oak_tree_left</name>
+      <name>oak_tree_medium</name>
       <uri>model://oak_tree</uri>
       <static>true</static>
-      <pose>6.5 3.2 0 0 0 0</pose>
+      <pose>4.5 2.8 0 0 0 0</pose>
+    </include>
+
+    <!--
+      Scenario 3: LONG RANGE (8 m) — Forward-Right
+      Leopard almost hidden among pine trees and rocks.
+      Expected: Hard detection. Tests the model under max camouflage conditions.
+    -->
+    <include>
+      <name>leopard_far</name>
+      <uri>model://leopard</uri>
+      <static>true</static>
+      <pose>8.0 -2.5 0 0 0 2.6</pose>
+    </include>
+
+    <!-- Heavy natural concealment for the far-range scenario -->
+    <include>
+      <name>rock_far_cover_1</name>
+      <uri>model://rock</uri>
+      <static>true</static>
+      <pose>8.5 -2.0 0 0 0 0.3</pose>
     </include>
 
     <include>
-      <name>pine_tree_right</name>
+      <name>rock_far_cover_2</name>
+      <uri>model://rock</uri>
+      <static>true</static>
+      <pose>7.8 -3.0 0 0 0 -1.2</pose>
+    </include>
+
+    <include>
+      <name>pine_tree_far</name>
       <uri>model://pine_tree</uri>
       <static>true</static>
-      <pose>7.0 -2.8 0 0 0 0.5</pose>
+      <pose>9.0 -2.0 0 0 0 0.8</pose>
     </include>
 
-    <!-- 7. Background Human Reference -->
+    <!-- ===== BACKGROUND ENVIRONMENT PROPS ===== -->
+
+    <!-- Ambient oak trees for natural habitat depth -->
     <include>
-      <name>standing_person</name>
-      <uri>model://person_standing</uri>
+      <name>oak_tree_bg_left</name>
+      <uri>model://oak_tree</uri>
       <static>true</static>
-      <pose>6.0 -4.0 0 0 0 0</pose>
+      <pose>10.0 4.0 0 0 0 0.4</pose>
     </include>
+
+    <include>
+      <name>pine_tree_bg_right</name>
+      <uri>model://pine_tree</uri>
+      <static>true</static>
+      <pose>10.5 -4.5 0 0 0 -0.6</pose>
+    </include>
+
   </world>
 </sdf>

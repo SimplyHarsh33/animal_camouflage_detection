@@ -148,18 +148,14 @@
         </clip>
       </camera>
       <plugin name="camera_controller" filename="libgazebo_ros_camera.so">
-        <alwaysOn>true</alwaysOn>
-        <updateRate>0.0</updateRate>
-        <cameraName>rgb_cam</cameraName>
-        <imageTopicName>image_raw</imageTopicName>
-        <cameraInfoTopicName>camera_info</cameraInfoTopicName>
-        <frameName>rgb_cam_camera_link_frame</frameName>
-        <hackBaseline>0.07</hackBaseline>
-        <distortionK1>0.0</distortionK1>
-        <distortionK2>0.0</distortionK2>
-        <distortionK3>0.0</distortionK3>
-        <distortionT1>0.0</distortionT1>
-        <distortionT2>0.0</distortionT2>
+        <ros>
+          <namespace>/</namespace>
+          <remapping>image_raw:=/rgb_cam/image_raw</remapping>
+          <remapping>camera_info:=/rgb_cam/camera_info</remapping>
+        </ros>
+        <camera_name>rgb_cam</camera_name>
+        <frame_name>rgb_cam_camera_link_frame</frame_name>
+        <hack_baseline>0.07</hack_baseline>
       </plugin>
     </sensor>
   </gazebo>
