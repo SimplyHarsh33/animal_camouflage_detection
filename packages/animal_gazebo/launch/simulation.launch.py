@@ -14,6 +14,10 @@ def generate_launch_description():
 
     gui = LaunchConfiguration('gui')
     recognition = LaunchConfiguration('recognition')
+    random_world = LaunchConfiguration('random_world')
+    seed = LaunchConfiguration('seed')
+    density = LaunchConfiguration('density')
+    num_deer = LaunchConfiguration('num_deer')
 
     declare_gui_cmd = DeclareLaunchArgument(
         'gui',
@@ -25,11 +29,37 @@ def generate_launch_description():
         default_value='false',
         description='Set to "true" to automatically start the YOLO camouflage recognition node')
 
+    declare_random_world_cmd = DeclareLaunchArgument(
+        'random_world',
+        default_value='false',
+        description='Set to "true" to procedurally generate a brand new randomized forest on launch')
+
+    declare_seed_cmd = DeclareLaunchArgument(
+        'seed',
+        default_value='',
+        description='Seed for reproducible research world benchmarks (e.g. seed:=42)')
+
+    declare_density_cmd = DeclareLaunchArgument(
+        'density',
+        default_value='medium',
+        description='Vegetation density: low, medium, or high')
+
+    declare_num_deer_cmd = DeclareLaunchArgument(
+        'num_deer',
+        default_value='3',
+        description='Number of deer targets (1-4)')
+
     start_world = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
             os.path.join(pkg_animal_gazebo, 'launch', 'start_world.launch.py'),
         ),
-        launch_arguments={'gui': gui}.items()
+        launch_arguments={
+            'gui': gui,
+            'random_world': random_world,
+            'seed': seed,
+            'density': density,
+            'num_deer': num_deer,
+        }.items()
     )
 
     spawn_robot = IncludeLaunchDescription(
@@ -48,6 +78,10 @@ def generate_launch_description():
     return LaunchDescription([
         declare_gui_cmd,
         declare_recognition_cmd,
+        declare_random_world_cmd,
+        declare_seed_cmd,
+        declare_density_cmd,
+        declare_num_deer_cmd,
         start_world,
         spawn_robot,
         start_recognition,
