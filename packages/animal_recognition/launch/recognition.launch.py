@@ -14,8 +14,14 @@ def generate_launch_description():
 
     conf_thresh_arg = DeclareLaunchArgument(
         'confidence_threshold',
-        default_value='0.25',
-        description='Confidence threshold for animal detection'
+        default_value='0.22',
+        description='Confidence threshold for animal detection (0.22 optimal for camouflaged deer)'
+    )
+
+    frame_skip_arg = DeclareLaunchArgument(
+        'frame_skip',
+        default_value='1',
+        description='Number of frames to skip between YOLO inferences for CPU optimization'
     )
 
     clahe_arg = DeclareLaunchArgument(
@@ -40,12 +46,14 @@ def generate_launch_description():
             'confidence_threshold': LaunchConfiguration('confidence_threshold'),
             'enable_clahe_enhancement': LaunchConfiguration('enable_clahe_enhancement'),
             'target_animal': LaunchConfiguration('target_animal'),
+            'frame_skip': LaunchConfiguration('frame_skip'),
         }]
     )
 
     return LaunchDescription([
         model_path_arg,
         conf_thresh_arg,
+        frame_skip_arg,
         clahe_arg,
         target_animal_arg,
         recognition_node

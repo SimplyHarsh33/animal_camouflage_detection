@@ -14,6 +14,7 @@ install(
 install(
   PROGRAMS
     scripts/robot_control.py
+    scripts/autonomous_patrol.py
   DESTINATION
     lib/${PROJECT_NAME}
   OPTIONAL

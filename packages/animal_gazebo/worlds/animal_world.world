@@ -2,12 +2,12 @@
 <sdf version="1.6">
   <world name="procedural_forest_seed_513012">
 
-    <!-- ===== SUN LIGHTING (Domain Randomized) ===== -->
+    <!-- ===== SUN LIGHTING (CPU Optimized - Shadows Disabled) ===== -->
     <light type="directional" name="procedural_sun">
-      <cast_shadows>true</cast_shadows>
+      <cast_shadows>false</cast_shadows>
       <pose>0 0 15 0 0 0</pose>
-      <diffuse>0.94 0.88 0.84 1.0</diffuse>
-      <specular>0.15 0.15 0.15 1.0</specular>
+      <diffuse>0.95 0.92 0.88 1.0</diffuse>
+      <specular>0.10 0.10 0.10 1.0</specular>
       <attenuation>
         <range>1000</range>
         <constant>0.9</constant>

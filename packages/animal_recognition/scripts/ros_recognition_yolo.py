@@ -32,21 +32,24 @@ class CamouflageDetectionNode(Node):
     def __init__(self):
         super().__init__('animal_recognition_node')
 
-        # Declare parameters
+        # Declare parameters (Tuned for CPU & Camouflage Discovery)
         self.declare_parameter('model_path', 'yolov8n.pt')
-        self.declare_parameter('confidence_threshold', 0.30)
+        self.declare_parameter('confidence_threshold', 0.22)
         self.declare_parameter('enable_clahe_enhancement', True)
         self.declare_parameter('target_animal', 'deer')
+        self.declare_parameter('frame_skip', 1)  # 1 = run YOLO every 2nd frame (cuts CPU in half)
 
         self.model_path = self.get_parameter('model_path').get_parameter_value().string_value
         self.conf_threshold = self.get_parameter('confidence_threshold').get_parameter_value().double_value
         self.enable_clahe = self.get_parameter('enable_clahe_enhancement').get_parameter_value().bool_value
         self.target_animal = self.get_parameter('target_animal').get_parameter_value().string_value.lower()
+        self.frame_skip = self.get_parameter('frame_skip').get_parameter_value().integer_value
 
-        self.get_logger().info('Initializing Camouflage Animal Detection Node...')
+        self.get_logger().info('Initializing Camouflage Animal Detection Node (CPU-Optimized)...')
         self.get_logger().info(f'Target Wildlife: {self.target_animal.upper()}')
         self.get_logger().info(f'Confidence Threshold: {self.conf_threshold}')
-        self.get_logger().info(f'CLAHE Camouflage Preprocessing: {self.enable_clahe}')
+        self.get_logger().info(f'CLAHE Preprocessing: {self.enable_clahe}')
+        self.get_logger().info(f'CPU Frame Skip: {self.frame_skip}')
 
         # Model resolution logic
         custom_weights = [
@@ -79,6 +82,11 @@ class CamouflageDetectionNode(Node):
 
         self.bridge = CvBridge()
 
+        # Camera Pinhole Parameters for Monocular Distance Estimation
+        # FOV = ~80° (1.3962634 rad), Width = 640 px -> fx = (640/2) / tan(80°/2) ~= 381.5 px
+        self.focal_length_px = 381.5
+        self.real_target_height_m = 1.35  # Approximate height of deer model in meters
+
         # Subscribers & Publishers
         self.image_sub = self.create_subscription(
             Image,
@@ -101,21 +109,24 @@ class CamouflageDetectionNode(Node):
 
         # Performance & Tracking
         self.frame_count = 0
+        self.inference_frame_idx = 0
         self.last_fps_time = time.time()
         self.fps = 0.0
+        self.last_inf_time_ms = 0.0
 
-        # Temporal Box Smoother (EMA)
+        # Temporal Box Smoother (EMA) & Cached detections for frame-skipping
         self.smoothed_boxes = []
+        self.last_smoothed_detections = []
         self.smooth_alpha = 0.65  # weight for new frame
 
-        # CLAHE local contrast enhancer
-        self.clahe = cv2.createCLAHE(clipLimit=2.5, tileGridSize=(8, 8))
+        # CLAHE local contrast enhancer (tuned to 4x4 tile grid for fur micro-contrast)
+        self.clahe = cv2.createCLAHE(clipLimit=3.0, tileGridSize=(4, 4))
 
         # Wildlife taxonomy mapping (COCO classes to Target Animal)
-        self.ungulate_coco_classes = {'horse', 'giraffe', 'cow', 'sheep', 'zebra', 'bear', 'deer', 'dog'}
+        self.ungulate_coco_classes = {'horse', 'giraffe', 'cow', 'sheep', 'zebra', 'bear', 'deer', 'dog', 'elephant', 'cat'}
         self.noise_coco_classes = {'bird', 'potted plant', 'kite', 'bench', 'chair', 'umbrella'}
 
-        self.get_logger().info('Camouflage Detection Node is active!')
+        self.get_logger().info('Camouflage Detection Node is active and optimized for Intel i5!')
 
     def preprocess_for_camouflage(self, cv_image):
         """
@@ -133,6 +144,7 @@ class CamouflageDetectionNode(Node):
 
     def image_callback(self, msg: Image):
         self.frame_count += 1
+        self.inference_frame_idx += 1
         now = time.time()
         if now - self.last_fps_time >= 1.0:
             self.fps = self.frame_count / (now - self.last_fps_time)
@@ -146,17 +158,21 @@ class CamouflageDetectionNode(Node):
             return
 
         h, w, _ = cv_image.shape
-        start_inf = time.time()
-
-        raw_detections = []
         annotated_image = cv_image.copy()
 
-        if self.model is not None:
-            # 1. Preprocess frame with CLAHE
+        # Decide whether to run YOLO inference on this frame or reuse cached detections
+        # Running every 2nd frame cuts CPU usage by ~50% while maintaining smooth HUD
+        should_run_yolo = (self.frame_skip <= 0) or (self.inference_frame_idx % (self.frame_skip + 1) == 0)
+
+        if should_run_yolo and self.model is not None:
+            start_inf = time.time()
+
+            # 1. Preprocess frame with CLAHE texture-enhancement
             processed_frame = self.preprocess_for_camouflage(cv_image)
 
             # 2. Run inference
             results = self.model(processed_frame, conf=self.conf_threshold, verbose=False)
+            raw_detections = []
 
             for result in results:
                 boxes = result.boxes
@@ -171,22 +187,33 @@ class CamouflageDetectionNode(Node):
                         continue
 
                     # Intelligent Wildlife Semantic Mapping:
-                    # COCO lacks 'deer' class, so deer is classified as 'horse' (highest quadruped prior),
-                    # 'giraffe' (neck shape), 'cow', 'sheep', or trained 'deer'.
+                    # COCO lacks 'deer' class, so deer is classified as quadruped priors ('horse', 'sheep', etc.)
                     is_wildlife_target = (cls_name in self.ungulate_coco_classes) or (cls_name == self.target_animal)
-                    
                     label_name = "DEER" if is_wildlife_target else cls_name.upper()
+
+                    # Monocular distance estimation (meters)
+                    bbox_h = max(float(xyxy[3] - xyxy[1]), 1.0)
+                    dist_m = round((self.focal_length_px * self.real_target_height_m) / bbox_h, 1)
+                    dist_m = min(max(dist_m, 0.8), 25.0)
+
+                    center_x = round(float((xyxy[0] + xyxy[2]) / 2.0), 1)
+                    center_y = round(float((xyxy[1] + xyxy[3]) / 2.0), 1)
 
                     raw_detections.append({
                         'class_name': label_name,
                         'original_coco_class': cls_name,
                         'is_target': is_wildlife_target,
                         'confidence': conf,
+                        'distance_m': dist_m,
+                        'center': (center_x, center_y),
                         'bbox': xyxy
                     })
 
-        # Apply Temporal Smoothing on bounding boxes to prevent jitter
-        smoothed_detections = self.smooth_predictions(raw_detections)
+            self.last_inf_time_ms = (time.time() - start_inf) * 1000
+            # Apply Temporal Smoothing on bounding boxes to prevent jitter
+            self.last_smoothed_detections = self.smooth_predictions(raw_detections)
+
+        smoothed_detections = self.last_smoothed_detections
 
         # Draw annotations
         for det in smoothed_detections:
@@ -194,31 +221,42 @@ class CamouflageDetectionNode(Node):
             conf = det['confidence']
             is_target = det['is_target']
             name = det['class_name']
+            dist_m = det.get('distance_m', 0.0)
 
-            # Box styling
+            # Box styling: green for target deer, orange for others
             box_color = (0, 255, 60) if is_target else (0, 165, 255)
             cv2.rectangle(annotated_image, (x1, y1), (x2, y2), box_color, 2)
 
-            # Label banner
+            # Corner brackets for tactical look
+            line_len = min(18, max(5, (x2 - x1) // 4))
+            cv2.line(annotated_image, (x1, y1), (x1 + line_len, y1), box_color, 3)
+            cv2.line(annotated_image, (x1, y1), (x1, y1 + line_len), box_color, 3)
+            cv2.line(annotated_image, (x2, y1), (x2 - line_len, y1), box_color, 3)
+            cv2.line(annotated_image, (x2, y1), (x2, y1 + line_len), box_color, 3)
+            cv2.line(annotated_image, (x1, y2), (x1 + line_len, y2), box_color, 3)
+            cv2.line(annotated_image, (x1, y2), (x1, y2 - line_len), box_color, 3)
+            cv2.line(annotated_image, (x2, y2), (x2 - line_len, y2), box_color, 3)
+            cv2.line(annotated_image, (x2, y2), (x2, y2 - line_len), box_color, 3)
+
+            # Label banner with distance
             prefix = "🦌 " if is_target else ""
-            label = f"{prefix}{name} {conf*100:.1f}%"
-            (lbl_w, lbl_h), _ = cv2.getTextSize(label, cv2.FONT_HERSHEY_SIMPLEX, 0.52, 1)
+            dist_str = f" | {dist_m:.1f}m" if dist_m > 0 else ""
+            label = f"{prefix}{name} {conf*100:.1f}%{dist_str}"
+            (lbl_w, lbl_h), _ = cv2.getTextSize(label, cv2.FONT_HERSHEY_SIMPLEX, 0.50, 1)
             cv2.rectangle(annotated_image, (x1, y1 - 22), (x1 + lbl_w + 8, y1), box_color, -1)
             cv2.putText(
                 annotated_image,
                 label,
                 (x1 + 4, y1 - 6),
                 cv2.FONT_HERSHEY_SIMPLEX,
-                0.52,
+                0.50,
                 (0, 0, 0),
                 2,
                 cv2.LINE_AA
             )
 
-        inf_time_ms = (time.time() - start_inf) * 1000
-
         # Render tactical HUD
-        self.draw_hud(annotated_image, smoothed_detections, inf_time_ms)
+        self.draw_hud(annotated_image, smoothed_detections, self.last_inf_time_ms)
 
         # Publish annotated stream
         try:
@@ -228,19 +266,37 @@ class CamouflageDetectionNode(Node):
         except CvBridgeError as e:
             self.get_logger().error(f'CvBridge publish error: {e}')
 
+        # Find primary target for autonomous visual servoing
+        targets = [d for d in smoothed_detections if d['is_target']]
+        primary_target = None
+        if targets:
+            best_target = max(targets, key=lambda d: d['confidence'])
+            primary_target = {
+                'label': best_target['class_name'],
+                'confidence': round(best_target['confidence'], 3),
+                'distance_m': best_target['distance_m'],
+                'center_x': best_target['center'][0],
+                'center_y': best_target['center'][1],
+                'bbox': [int(v) for v in best_target['bbox']]
+            }
+
         # Publish JSON telemetry
         telemetry = {
             'timestamp': time.time(),
             'fps': round(self.fps, 1),
-            'inference_time_ms': round(inf_time_ms, 1),
+            'inference_time_ms': round(self.last_inf_time_ms, 1),
             'target_animal': self.target_animal,
             'clahe_enabled': self.enable_clahe,
-            'target_acquired': any(d['is_target'] for d in smoothed_detections),
-            'count': len(smoothed_detections),
+            'target_acquired': len(targets) > 0,
+            'target_count': len(targets),
+            'primary_target': primary_target,
             'detections': [
                 {
                     'label': d['class_name'],
                     'confidence': round(d['confidence'], 3),
+                    'distance_m': d.get('distance_m', 0.0),
+                    'center_x': d['center'][0],
+                    'center_y': d['center'][1],
                     'bbox': [int(v) for v in d['bbox']]
                 } for d in smoothed_detections
             ]
@@ -263,10 +319,18 @@ class CamouflageDetectionNode(Node):
                 # Calculate IoU with previous boxes
                 prev_box = prev['bbox']
                 iou = self.calculate_iou(curr_box, prev_box)
-                if iou > 0.4:
+                if iou > 0.35:
                     # Blend box coordinates
                     smooth_box = self.smooth_alpha * curr_box + (1.0 - self.smooth_alpha) * prev_box
                     det['bbox'] = smooth_box
+                    det['confidence'] = round(float(self.smooth_alpha * det['confidence'] + (1.0 - self.smooth_alpha) * prev['confidence']), 3)
+                    # Recalculate distance and center from smoothed box
+                    bbox_h = max(float(smooth_box[3] - smooth_box[1]), 1.0)
+                    det['distance_m'] = round(min(max((self.focal_length_px * self.real_target_height_m) / bbox_h, 0.8), 25.0), 1)
+                    det['center'] = (
+                        round(float((smooth_box[0] + smooth_box[2]) / 2.0), 1),
+                        round(float((smooth_box[1] + smooth_box[3]) / 2.0), 1)
+                    )
                     matched = True
                     break
             smoothed.append(det)
@@ -296,12 +360,18 @@ class CamouflageDetectionNode(Node):
         cv2.line(img, (0, 36), (w, 36), (0, 200, 255), 1)
 
         targets = [d for d in detections if d['is_target']]
-        status_text = f"🦌 TARGET ACQUIRED: {len(targets)}" if len(targets) > 0 else "SCANNING ENVIRONMENT..."
-        status_color = (0, 255, 60) if len(targets) > 0 else (0, 165, 255)
+        if len(targets) > 0:
+            nearest = min(targets, key=lambda d: d.get('distance_m', 99.0))
+            dist_val = nearest.get('distance_m', 0.0)
+            status_text = f"🦌 TARGET ACQUIRED: {len(targets)} | DIST: ~{dist_val:.1f}m"
+            status_color = (0, 255, 60)
+        else:
+            status_text = "SCANNING FOR CAMOUFLAGED WILDLIFE..."
+            status_color = (0, 165, 255)
 
-        cv2.putText(img, "CAMOUFLAGE AI DETECTOR", (10, 24), cv2.FONT_HERSHEY_SIMPLEX, 0.55, (255, 255, 255), 2)
-        cv2.putText(img, status_text, (235, 24), cv2.FONT_HERSHEY_SIMPLEX, 0.52, status_color, 2)
-        cv2.putText(img, f"FPS: {self.fps:.1f} | {inf_time_ms:.1f}ms", (w - 170, 24), cv2.FONT_HERSHEY_SIMPLEX, 0.45, (200, 200, 200), 1)
+        cv2.putText(img, "CAMOUFLAGE AI DETECTOR", (10, 24), cv2.FONT_HERSHEY_SIMPLEX, 0.52, (255, 255, 255), 2)
+        cv2.putText(img, status_text, (230, 24), cv2.FONT_HERSHEY_SIMPLEX, 0.48, status_color, 2)
+        cv2.putText(img, f"FPS: {self.fps:.1f} | {inf_time_ms:.0f}ms", (w - 165, 24), cv2.FONT_HERSHEY_SIMPLEX, 0.44, (200, 200, 200), 1)
 
         # Center crosshair
         cx, cy = w // 2, h // 2

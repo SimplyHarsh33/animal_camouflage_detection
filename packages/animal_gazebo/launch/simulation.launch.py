@@ -7,13 +7,17 @@ from launch.conditions import IfCondition
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import LaunchConfiguration
 
+from launch_ros.actions import Node
+
 def generate_launch_description():
     pkg_animal_gazebo = get_package_share_directory('animal_gazebo')
     pkg_animal_description = get_package_share_directory('animal_description')
     pkg_animal_recognition = get_package_share_directory('animal_recognition')
+    pkg_animal_control = get_package_share_directory('animal_control')
 
     gui = LaunchConfiguration('gui')
     recognition = LaunchConfiguration('recognition')
+    autonomous = LaunchConfiguration('autonomous')
     random_world = LaunchConfiguration('random_world')
     seed = LaunchConfiguration('seed')
     density = LaunchConfiguration('density')
@@ -28,6 +32,11 @@ def generate_launch_description():
         'recognition',
         default_value='false',
         description='Set to "true" to automatically start the YOLO camouflage recognition node')
+
+    declare_autonomous_cmd = DeclareLaunchArgument(
+        'autonomous',
+        default_value='false',
+        description='Set to "true" to automatically start the autonomous search & patrol node')
 
     declare_random_world_cmd = DeclareLaunchArgument(
         'random_world',
@@ -75,9 +84,18 @@ def generate_launch_description():
         condition=IfCondition(recognition)
     )
 
+    start_autonomous = Node(
+        package='animal_control',
+        executable='autonomous_patrol.py',
+        name='autonomous_patrol_node',
+        output='screen',
+        condition=IfCondition(autonomous)
+    )
+
     return LaunchDescription([
         declare_gui_cmd,
         declare_recognition_cmd,
+        declare_autonomous_cmd,
         declare_random_world_cmd,
         declare_seed_cmd,
         declare_density_cmd,
@@ -85,4 +103,5 @@ def generate_launch_description():
         start_world,
         spawn_robot,
         start_recognition,
+        start_autonomous,
     ])

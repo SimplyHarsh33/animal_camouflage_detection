@@ -24,11 +24,12 @@ def parse_args():
     parser.add_argument("--density", type=str, default="medium", choices=["low", "medium", "high"], help="Vegetation density")
     parser.add_argument("--arena-size", type=float, default=22.0, help="Arena width and height in meters")
     parser.add_argument("--output", type=str, default=None, help="Output SDF world file path")
+    parser.add_argument("--enable-shadows", action="store_true", help="Enable dynamic shadows (CPU intensive)")
     parser.add_argument("--no-perimeter", action="store_true", help="Disable boundary perimeter trees")
     return parser.parse_args()
 
 class ProceduralWorldGenerator:
-    def __init__(self, seed=None, num_deer=3, density="medium", arena_size=22.0, perimeter=True):
+    def __init__(self, seed=None, num_deer=3, density="medium", arena_size=22.0, perimeter=True, shadows=False):
         self.seed = seed if seed is not None else random.randint(1000, 999999)
         self.rng = random.Random(self.seed)
         self.num_deer = num_deer
@@ -36,15 +37,16 @@ class ProceduralWorldGenerator:
         self.arena_size = arena_size
         self.half_size = arena_size / 2.0
         self.perimeter = perimeter
+        self.shadows = shadows
 
         # Safety radius around robot spawn (0, 0)
         self.spawn_clearance_radius = 2.0
 
-        # Density configs (trees, rocks)
+        # Density configs (trees, rocks) - tuned for laptop CPU performance
         density_map = {
-            "low": {"trees": 12, "rocks": 8},
-            "medium": {"trees": 20, "rocks": 14},
-            "high": {"trees": 30, "rocks": 22},
+            "low": {"trees": 8, "rocks": 6},
+            "medium": {"trees": 15, "rocks": 10},
+            "high": {"trees": 24, "rocks": 16},
         }
         self.tree_count = density_map[density]["trees"]
         self.rock_count = density_map[density]["rocks"]
@@ -207,9 +209,9 @@ class ProceduralWorldGenerator:
             '<sdf version="1.6">',
             f'  <world name="procedural_forest_seed_{self.seed}">',
             '',
-            '    <!-- ===== SUN LIGHTING (Domain Randomized) ===== -->',
+            '    <!-- ===== SUN LIGHTING (Domain Randomized & CPU Optimized) ===== -->',
             '    <light type="directional" name="procedural_sun">',
-            '      <cast_shadows>true</cast_shadows>',
+            f'      <cast_shadows>{"true" if self.shadows else "false"}</cast_shadows>',
             '      <pose>0 0 15 0 0 0</pose>',
             f'      <diffuse>{sun["diffuse"]}</diffuse>',
             f'      <specular>{sun["specular"]}</specular>',
@@ -269,7 +271,8 @@ def main():
         num_deer=args.num_deer,
         density=args.density,
         arena_size=args.arena_size,
-        perimeter=not args.no_perimeter
+        perimeter=not args.no_perimeter,
+        shadows=args.enable_shadows
     )
 
     sdf_content = generator.generate_sdf()
