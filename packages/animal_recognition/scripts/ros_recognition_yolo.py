@@ -38,18 +38,21 @@ class CamouflageDetectionNode(Node):
         self.declare_parameter('enable_clahe_enhancement', True)
         self.declare_parameter('target_animal', 'deer')
         self.declare_parameter('frame_skip', 1)  # 1 = run YOLO every 2nd frame (cuts CPU in half)
+        self.declare_parameter('show_window', True)  # Display live OpenCV GUI window
 
         self.model_path = self.get_parameter('model_path').get_parameter_value().string_value
         self.conf_threshold = self.get_parameter('confidence_threshold').get_parameter_value().double_value
         self.enable_clahe = self.get_parameter('enable_clahe_enhancement').get_parameter_value().bool_value
         self.target_animal = self.get_parameter('target_animal').get_parameter_value().string_value.lower()
         self.frame_skip = self.get_parameter('frame_skip').get_parameter_value().integer_value
+        self.show_window = self.get_parameter('show_window').get_parameter_value().bool_value
 
         self.get_logger().info('Initializing Camouflage Animal Detection Node (CPU-Optimized)...')
         self.get_logger().info(f'Target Wildlife: {self.target_animal.upper()}')
         self.get_logger().info(f'Confidence Threshold: {self.conf_threshold}')
         self.get_logger().info(f'CLAHE Preprocessing: {self.enable_clahe}')
         self.get_logger().info(f'CPU Frame Skip: {self.frame_skip}')
+        self.get_logger().info(f'Live GUI Window: {self.show_window}')
 
         # Model resolution logic
         custom_weights = [
@@ -266,6 +269,11 @@ class CamouflageDetectionNode(Node):
         except CvBridgeError as e:
             self.get_logger().error(f'CvBridge publish error: {e}')
 
+        # Display live GUI feed window
+        if self.show_window:
+            cv2.imshow("Camouflage Animal Detection Feed", annotated_image)
+            cv2.waitKey(1)
+
         # Find primary target for autonomous visual servoing
         targets = [d for d in smoothed_detections if d['is_target']]
         primary_target = None
@@ -376,6 +384,14 @@ class CamouflageDetectionNode(Node):
         # Center crosshair
         cx, cy = w // 2, h // 2
         cv2.drawMarker(img, (cx, cy), (0, 255, 255), markerType=cv2.MARKER_CROSS, markerSize=18, thickness=1)
+
+    def destroy_node(self):
+        if hasattr(self, 'show_window') and self.show_window:
+            try:
+                cv2.destroyAllWindows()
+            except Exception:
+                pass
+        super().destroy_node()
 
 
 def main(args=None):

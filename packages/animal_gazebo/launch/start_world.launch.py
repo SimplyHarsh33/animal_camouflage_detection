@@ -67,7 +67,7 @@ def launch_setup(context, *args, **kwargs):
 def generate_launch_description():
     declare_gui_cmd = DeclareLaunchArgument(
         'gui',
-        default_value='false',
+        default_value='true',
         description='Set to "true" to open Gazebo 3D GUI window, "false" for headless')
 
     declare_random_world_cmd = DeclareLaunchArgument(

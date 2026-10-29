@@ -40,26 +40,46 @@ source install/setup.bash
 
 ---
 
-### Step 3: Run the Complete Autonomous System (Single Command)
+### Step 3: Run the Complete Autonomous System
 
-#### Option A: Full Autonomous Mode (Gazebo GUI + AI Detection + Robot Patrol)
+#### Option A: One-Command All-In-One (Gazebo 3D World + Live AI Camera Feed + Patrol)
 ```bash
 ros2 launch animal_gazebo simulation.launch.py gui:=true recognition:=true autonomous:=true
 ```
+*Both the **Gazebo 3D Simulation World** window and the **Live Camouflage AI Camera Feed** window will pop up automatically on your screen!*
 
-#### Option B: Headless Performance Mode (Fastest on Laptops)
-If your laptop runs warm with the 3D Gazebo GUI, run headless and view only the camera HUD:
-```bash
-# Terminal 1: Launch simulation + AI perception + Autonomous patrol (headless)
-ros2 launch animal_gazebo simulation.launch.py gui:=false recognition:=true autonomous:=true
-```
+---
 
-Open a second container terminal (`docker exec -it <container_id> bash`):
-```bash
-# Terminal 2: View the Live Tactical HUD Camera Feed
-source install/setup.bash
-ros2 run rqt_image_view rqt_image_view /animal_detection/annotated_image
-```
+#### Option B: Step-by-Step Modular Launch (Recommended)
+
+1. **Terminal 1: Launch Gazebo 3D Simulation**
+   ```bash
+   ros2 launch animal_gazebo simulation.launch.py gui:=true
+   ```
+   *(Opens the 3D Gazebo forest arena, robot, terrain, and camouflaged deer).*
+
+2. **Terminal 2: Launch AI Detection Feed**
+   ```bash
+   # Connect to running container from a new host terminal:
+   docker exec -it animal_sim bash
+   source install/setup.bash
+
+   # Launch detection node (automatically opens live Camera HUD window)
+   ros2 launch animal_recognition recognition.launch.py
+   ```
+   *(Opens the live camera window with tactical HUD, bounding boxes, and distance telemetry).*
+
+3. **Terminal 3: Launch Autonomous Patrol (or Keyboard Control)**
+   ```bash
+   docker exec -it animal_sim bash
+   source install/setup.bash
+
+   # Option 3a: Autonomous search & patrol
+   ros2 run animal_control autonomous_patrol.py
+
+   # Option 3b: Or manual keyboard teleop
+   ros2 run teleop_twist_keyboard teleop_twist_keyboard --ros-args -r cmd_vel:=/animal_robot/cmd_vel
+   ```
 
 ---
 

@@ -25,7 +25,7 @@ def generate_launch_description():
 
     declare_gui_cmd = DeclareLaunchArgument(
         'gui',
-        default_value='false',
+        default_value='true',
         description='Set to "true" for Gazebo 3D GUI window, "false" for headless mode')
 
     declare_recognition_cmd = DeclareLaunchArgument(

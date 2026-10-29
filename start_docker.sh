@@ -2,8 +2,9 @@
 set -e
 
 # Allow GUI access from Docker container to host display
-xhost +local:root || true
-xhost +local:docker || true
+xhost +local:root >/dev/null 2>&1 || true
+xhost +local:docker >/dev/null 2>&1 || true
+xhost +local: >/dev/null 2>&1 || true
 
 # Auto-detect if sudo is needed for docker
 if ! docker info > /dev/null 2>&1; then
@@ -12,12 +13,16 @@ else
     DOCKER_CMD="docker"
 fi
 
+# Clean up any leftover stopped container with the same name
+$DOCKER_CMD rm -f animal_sim >/dev/null 2>&1 || true
+
 echo "======================================================="
 echo "  Animal Camouflage Detection — ROS 2 + Gazebo"
 echo "  Starting Docker container with GUI support..."
 echo "======================================================="
 
 $DOCKER_CMD run -it --rm \
+  --name animal_sim \
   --net=host \
   --ipc=host \
   -e DISPLAY=$DISPLAY \

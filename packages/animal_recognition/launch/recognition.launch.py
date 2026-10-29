@@ -36,6 +36,12 @@ def generate_launch_description():
         description='Target animal class name'
     )
 
+    show_window_arg = DeclareLaunchArgument(
+        'show_window',
+        default_value='true',
+        description='Display live OpenCV GUI window of the annotated camera feed'
+    )
+
     recognition_node = Node(
         package='animal_recognition',
         executable='ros_recognition_yolo.py',
@@ -47,6 +53,7 @@ def generate_launch_description():
             'enable_clahe_enhancement': LaunchConfiguration('enable_clahe_enhancement'),
             'target_animal': LaunchConfiguration('target_animal'),
             'frame_skip': LaunchConfiguration('frame_skip'),
+            'show_window': LaunchConfiguration('show_window'),
         }]
     )
 
@@ -56,5 +63,6 @@ def generate_launch_description():
         frame_skip_arg,
         clahe_arg,
         target_animal_arg,
+        show_window_arg,
         recognition_node
     ])
