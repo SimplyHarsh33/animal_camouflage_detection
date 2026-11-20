@@ -1,20 +1,20 @@
 <?xml version="1.0" ?>
 <sdf version="1.6">
-  <world name="procedural_forest_seed_513012">
+  <world name="procedural_forest_seed_42">
 
-    <!-- ===== SUN LIGHTING (CPU Optimized - Shadows Disabled) ===== -->
+    <!-- ===== SUN LIGHTING (Domain Randomized & CPU Optimized) ===== -->
     <light type="directional" name="procedural_sun">
       <cast_shadows>false</cast_shadows>
       <pose>0 0 15 0 0 0</pose>
-      <diffuse>0.95 0.92 0.88 1.0</diffuse>
-      <specular>0.10 0.10 0.10 1.0</specular>
+      <diffuse>0.94 0.83 0.77 1.0</diffuse>
+      <specular>0.15 0.15 0.15 1.0</specular>
       <attenuation>
         <range>1000</range>
         <constant>0.9</constant>
         <linear>0.01</linear>
         <quadratic>0.001</quadratic>
       </attenuation>
-      <direction>0.049 0.605 -0.794</direction>
+      <direction>-0.055 -0.411 -0.91</direction>
     </light>
 
     <!-- ===== GROUND PLANE ===== -->
@@ -27,367 +27,313 @@
       <name>perimeter_n_0</name>
       <uri>model://pine_tree</uri>
       <static>true</static>
-      <pose>-11.0 11.0 0.0 0 0 -1.5975</pose>
+      <pose>-11.0 11.0 0.0 0 0 0.876</pose>
     </include>
     <include>
       <name>perimeter_s_0</name>
       <uri>model://pine_tree</uri>
       <static>true</static>
-      <pose>-11.0 -11.0 0.0 0 0 -3.0821</pose>
+      <pose>-11.0 -11.0 0.0 0 0 -2.9844</pose>
     </include>
     <include>
       <name>perimeter_n_1</name>
       <uri>model://oak_tree</uri>
       <static>true</static>
-      <pose>-7.8 11.0 0.0 0 0 -2.9352</pose>
+      <pose>-7.8 11.0 0.0 0 0 -1.4135</pose>
     </include>
     <include>
       <name>perimeter_s_1</name>
       <uri>model://oak_tree</uri>
       <static>true</static>
-      <pose>-7.8 -11.0 0.0 0 0 2.3115</pose>
+      <pose>-7.8 -11.0 0.0 0 0 -1.7391</pose>
     </include>
     <include>
       <name>perimeter_n_2</name>
       <uri>model://pine_tree</uri>
       <static>true</static>
-      <pose>-4.6 11.0 0.0 0 0 2.5263</pose>
+      <pose>-4.6 11.0 0.0 0 0 1.4858</pose>
     </include>
     <include>
       <name>perimeter_s_2</name>
       <uri>model://pine_tree</uri>
       <static>true</static>
-      <pose>-4.6 -11.0 0.0 0 0 2.9709</pose>
+      <pose>-4.6 -11.0 0.0 0 0 1.1102</pose>
     </include>
     <include>
       <name>perimeter_n_3</name>
       <uri>model://oak_tree</uri>
       <static>true</static>
-      <pose>-1.4 11.0 0.0 0 0 0.0864</pose>
+      <pose>-1.4 11.0 0.0 0 0 2.4641</pose>
     </include>
     <include>
       <name>perimeter_s_3</name>
       <uri>model://oak_tree</uri>
       <static>true</static>
-      <pose>-1.4 -11.0 0.0 0 0 2.1137</pose>
+      <pose>-1.4 -11.0 0.0 0 0 -2.5953</pose>
     </include>
     <include>
       <name>perimeter_n_4</name>
       <uri>model://pine_tree</uri>
       <static>true</static>
-      <pose>1.8 11.0 0.0 0 0 0.6384</pose>
+      <pose>1.8 11.0 0.0 0 0 -0.4906</pose>
     </include>
     <include>
       <name>perimeter_s_4</name>
       <uri>model://pine_tree</uri>
       <static>true</static>
-      <pose>1.8 -11.0 0.0 0 0 -2.994</pose>
+      <pose>1.8 -11.0 0.0 0 0 -2.9544</pose>
     </include>
     <include>
       <name>perimeter_n_5</name>
       <uri>model://oak_tree</uri>
       <static>true</static>
-      <pose>5.0 11.0 0.0 0 0 -2.6177</pose>
+      <pose>5.0 11.0 0.0 0 0 -1.7678</pose>
     </include>
     <include>
       <name>perimeter_s_5</name>
       <uri>model://oak_tree</uri>
       <static>true</static>
-      <pose>5.0 -11.0 0.0 0 0 -0.0461</pose>
+      <pose>5.0 -11.0 0.0 0 0 0.0336</pose>
     </include>
     <include>
       <name>perimeter_n_6</name>
       <uri>model://pine_tree</uri>
       <static>true</static>
-      <pose>8.2 11.0 0.0 0 0 -2.3441</pose>
+      <pose>8.2 11.0 0.0 0 0 -2.9749</pose>
     </include>
     <include>
       <name>perimeter_s_6</name>
       <uri>model://pine_tree</uri>
       <static>true</static>
-      <pose>8.2 -11.0 0.0 0 0 -1.6215</pose>
+      <pose>8.2 -11.0 0.0 0 0 -1.8923</pose>
     </include>
     <include>
       <name>perimeter_e_7</name>
       <uri>model://pine_tree</uri>
       <static>true</static>
-      <pose>11.0 -7.8 0.0 0 0 0.1719</pose>
+      <pose>11.0 -7.8 0.0 0 0 0.9418</pose>
     </include>
     <include>
       <name>perimeter_w_7</name>
       <uri>model://pine_tree</uri>
       <static>true</static>
-      <pose>-11.0 -7.8 0.0 0 0 -0.0588</pose>
+      <pose>-11.0 -7.8 0.0 0 0 0.2824</pose>
     </include>
     <include>
       <name>perimeter_e_8</name>
       <uri>model://oak_tree</uri>
       <static>true</static>
-      <pose>11.0 -4.6 0.0 0 0 -0.1021</pose>
+      <pose>11.0 -4.6 0.0 0 0 -1.7565</pose>
     </include>
     <include>
       <name>perimeter_w_8</name>
       <uri>model://oak_tree</uri>
       <static>true</static>
-      <pose>-11.0 -4.6 0.0 0 0 1.1215</pose>
+      <pose>-11.0 -4.6 0.0 0 0 0.5609</pose>
     </include>
     <include>
       <name>perimeter_e_9</name>
       <uri>model://pine_tree</uri>
       <static>true</static>
-      <pose>11.0 -1.4 0.0 0 0 2.6593</pose>
+      <pose>11.0 -1.4 0.0 0 0 1.9442</pose>
     </include>
     <include>
       <name>perimeter_w_9</name>
       <uri>model://pine_tree</uri>
       <static>true</static>
-      <pose>-11.0 -1.4 0.0 0 0 -0.0521</pose>
+      <pose>-11.0 -1.4 0.0 0 0 -3.1008</pose>
     </include>
     <include>
       <name>perimeter_e_10</name>
       <uri>model://oak_tree</uri>
       <static>true</static>
-      <pose>11.0 1.8 0.0 0 0 1.9083</pose>
+      <pose>11.0 1.8 0.0 0 0 1.9215</pose>
     </include>
     <include>
       <name>perimeter_w_10</name>
       <uri>model://oak_tree</uri>
       <static>true</static>
-      <pose>-11.0 1.8 0.0 0 0 -2.5654</pose>
+      <pose>-11.0 1.8 0.0 0 0 1.2449</pose>
     </include>
     <include>
       <name>perimeter_e_11</name>
       <uri>model://pine_tree</uri>
       <static>true</static>
-      <pose>11.0 5.0 0.0 0 0 2.6142</pose>
+      <pose>11.0 5.0 0.0 0 0 -1.0037</pose>
     </include>
     <include>
       <name>perimeter_w_11</name>
       <uri>model://pine_tree</uri>
       <static>true</static>
-      <pose>-11.0 5.0 0.0 0 0 -0.7068</pose>
+      <pose>-11.0 5.0 0.0 0 0 -2.1647</pose>
     </include>
     <include>
       <name>deer_close_1</name>
       <uri>model://deer</uri>
       <static>true</static>
-      <pose>-1.71 -3.324 0.0 0 0 1.5856</pose>
+      <pose>-1.803 2.729 0.0 0 0 -2.5589</pose>
     </include>
     <include>
       <name>deer_medium_2</name>
       <uri>model://deer</uri>
       <static>true</static>
-      <pose>4.343 4.612 0.0 0 0 -0.6622</pose>
+      <pose>2.174 -4.376 0.0 0 0 -0.2549</pose>
     </include>
     <include>
       <name>deer_far_3</name>
       <uri>model://deer</uri>
       <static>true</static>
-      <pose>8.98 -2.715 0.0 0 0 -0.8396</pose>
+      <pose>8.835 2.211 0.0 0 0 0.7447</pose>
     </include>
     <include>
       <name>tree_1</name>
       <uri>model://oak_tree</uri>
       <static>true</static>
-      <pose>4.135 1.299 0.0 0 0 -1.3809</pose>
+      <pose>2.903 4.915 0.0 0 0 3.0487</pose>
     </include>
     <include>
       <name>tree_2</name>
       <uri>model://oak_tree</uri>
       <static>true</static>
-      <pose>-0.614 6.414 0.0 0 0 1.997</pose>
+      <pose>6.597 -2.158 0.0 0 0 -0.2927</pose>
     </include>
     <include>
       <name>tree_3</name>
       <uri>model://pine_tree</uri>
       <static>true</static>
-      <pose>4.051 -5.607 0.0 0 0 -2.0238</pose>
+      <pose>-6.072 -2.605 0.0 0 0 1.0692</pose>
     </include>
     <include>
       <name>tree_4</name>
-      <uri>model://pine_tree</uri>
+      <uri>model://oak_tree</uri>
       <static>true</static>
-      <pose>-4.978 -7.461 0.0 0 0 1.6586</pose>
+      <pose>4.124 -6.059 0.0 0 0 -0.7574</pose>
     </include>
     <include>
       <name>tree_5</name>
       <uri>model://oak_tree</uri>
       <static>true</static>
-      <pose>-7.877 6.399 0.0 0 0 -1.9734</pose>
+      <pose>-8.422 -3.322 0.0 0 0 -1.4593</pose>
     </include>
     <include>
       <name>tree_6</name>
-      <uri>model://pine_tree</uri>
+      <uri>model://oak_tree</uri>
       <static>true</static>
-      <pose>8.798 -8.25 0.0 0 0 2.5308</pose>
+      <pose>-0.014 6.924 0.0 0 0 0.8976</pose>
     </include>
     <include>
       <name>tree_7</name>
       <uri>model://oak_tree</uri>
       <static>true</static>
-      <pose>-3.42 -8.864 0.0 0 0 1.1658</pose>
+      <pose>-4.232 -4.561 0.0 0 0 0.3856</pose>
     </include>
     <include>
       <name>tree_8</name>
-      <uri>model://oak_tree</uri>
+      <uri>model://pine_tree</uri>
       <static>true</static>
-      <pose>-3.877 -2.634 0.0 0 0 -2.574</pose>
+      <pose>4.446 -1.288 0.0 0 0 0.5249</pose>
     </include>
     <include>
       <name>tree_9</name>
       <uri>model://pine_tree</uri>
       <static>true</static>
-      <pose>0.984 -6.562 0.0 0 0 -0.5538</pose>
+      <pose>-5.052 8.956 0.0 0 0 0.0599</pose>
     </include>
     <include>
       <name>tree_10</name>
-      <uri>model://pine_tree</uri>
+      <uri>model://oak_tree</uri>
       <static>true</static>
-      <pose>-3.261 -5.778 0.0 0 0 0.2884</pose>
+      <pose>4.604 6.5 0.0 0 0 -2.1813</pose>
     </include>
     <include>
       <name>tree_11</name>
       <uri>model://oak_tree</uri>
       <static>true</static>
-      <pose>0.417 -4.218 0.0 0 0 -1.7982</pose>
+      <pose>8.479 6.494 0.0 0 0 -3.0695</pose>
     </include>
     <include>
       <name>tree_12</name>
       <uri>model://oak_tree</uri>
       <static>true</static>
-      <pose>8.128 5.359 0.0 0 0 0.3926</pose>
+      <pose>3.271 0.665 0.0 0 0 -1.4651</pose>
     </include>
     <include>
       <name>tree_13</name>
-      <uri>model://oak_tree</uri>
+      <uri>model://pine_tree</uri>
       <static>true</static>
-      <pose>-6.521 4.365 0.0 0 0 -2.8104</pose>
+      <pose>6.765 -4.259 0.0 0 0 0.0037</pose>
     </include>
     <include>
       <name>tree_14</name>
-      <uri>model://pine_tree</uri>
+      <uri>model://oak_tree</uri>
       <static>true</static>
-      <pose>-4.195 2.383 0.0 0 0 -2.2478</pose>
+      <pose>0.138 -7.085 0.0 0 0 0.7873</pose>
     </include>
     <include>
       <name>tree_15</name>
       <uri>model://oak_tree</uri>
       <static>true</static>
-      <pose>5.649 -1.117 0.0 0 0 2.1561</pose>
-    </include>
-    <include>
-      <name>tree_16</name>
-      <uri>model://oak_tree</uri>
-      <static>true</static>
-      <pose>-0.852 8.423 0.0 0 0 -1.0467</pose>
-    </include>
-    <include>
-      <name>tree_17</name>
-      <uri>model://oak_tree</uri>
-      <static>true</static>
-      <pose>6.034 -3.775 0.0 0 0 0.149</pose>
-    </include>
-    <include>
-      <name>tree_18</name>
-      <uri>model://oak_tree</uri>
-      <static>true</static>
-      <pose>2.213 4.163 0.0 0 0 1.8675</pose>
-    </include>
-    <include>
-      <name>tree_19</name>
-      <uri>model://pine_tree</uri>
-      <static>true</static>
-      <pose>-8.314 3.538 0.0 0 0 2.7848</pose>
-    </include>
-    <include>
-      <name>tree_20</name>
-      <uri>model://pine_tree</uri>
-      <static>true</static>
-      <pose>-5.554 -0.736 0.0 0 0 0.0431</pose>
+      <pose>-6.249 4.725 0.0 0 0 0.2474</pose>
     </include>
     <include>
       <name>rock_1</name>
       <uri>model://rock</uri>
       <static>true</static>
-      <pose>-6.86 1.651 0.0 0 0 2.9141</pose>
+      <pose>5.015 0.546 0.0 0 0 -3.138</pose>
     </include>
     <include>
       <name>rock_2</name>
       <uri>model://rock</uri>
       <static>true</static>
-      <pose>-7.246 -7.441 0.0 0 0 -1.3912</pose>
+      <pose>-3.165 -8.649 0.0 0 0 2.6961</pose>
     </include>
     <include>
       <name>rock_3</name>
       <uri>model://rock</uri>
       <static>true</static>
-      <pose>8.211 0.967 0.0 0 0 1.2412</pose>
+      <pose>6.817 5.97 0.0 0 0 -1.2094</pose>
     </include>
     <include>
       <name>rock_4</name>
       <uri>model://rock</uri>
       <static>true</static>
-      <pose>-5.943 6.206 0.0 0 0 0.5284</pose>
+      <pose>-7.957 6.804 0.0 0 0 2.8083</pose>
     </include>
     <include>
       <name>rock_5</name>
       <uri>model://rock</uri>
       <static>true</static>
-      <pose>5.577 8.988 0.0 0 0 -1.0802</pose>
+      <pose>-7.458 -0.252 0.0 0 0 -2.7067</pose>
     </include>
     <include>
       <name>rock_6</name>
       <uri>model://rock</uri>
       <static>true</static>
-      <pose>6.94 -6.601 0.0 0 0 -3.0073</pose>
+      <pose>4.691 4.785 0.0 0 0 -2.3349</pose>
     </include>
     <include>
       <name>rock_7</name>
       <uri>model://rock</uri>
       <static>true</static>
-      <pose>-8.351 -4.357 0.0 0 0 -0.3683</pose>
+      <pose>-4.229 6.704 0.0 0 0 -0.4829</pose>
     </include>
     <include>
       <name>rock_8</name>
       <uri>model://rock</uri>
       <static>true</static>
-      <pose>-5.963 8.105 0.0 0 0 2.4506</pose>
+      <pose>-5.188 0.707 0.0 0 0 1.4447</pose>
     </include>
     <include>
       <name>rock_9</name>
       <uri>model://rock</uri>
       <static>true</static>
-      <pose>2.351 1.741 0.0 0 0 -0.1966</pose>
+      <pose>-6.822 -4.955 0.0 0 0 -1.0173</pose>
     </include>
     <include>
       <name>rock_10</name>
       <uri>model://rock</uri>
       <static>true</static>
-      <pose>-0.41 -7.755 0.0 0 0 2.6787</pose>
-    </include>
-    <include>
-      <name>rock_11</name>
-      <uri>model://rock</uri>
-      <static>true</static>
-      <pose>-7.37 -2.346 0.0 0 0 2.4121</pose>
-    </include>
-    <include>
-      <name>rock_12</name>
-      <uri>model://rock</uri>
-      <static>true</static>
-      <pose>-0.881 2.996 0.0 0 0 -2.8597</pose>
-    </include>
-    <include>
-      <name>rock_13</name>
-      <uri>model://rock</uri>
-      <static>true</static>
-      <pose>-3.508 6.253 0.0 0 0 1.2432</pose>
-    </include>
-    <include>
-      <name>rock_14</name>
-      <uri>model://rock</uri>
-      <static>true</static>
-      <pose>7.825 -4.518 0.0 0 0 1.3544</pose>
+      <pose>-5.036 -7.722 0.0 0 0 0.8237</pose>
     </include>
 
   </world>

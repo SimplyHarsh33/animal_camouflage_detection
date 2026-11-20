@@ -1,0 +1,2000 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Autonomous Camouflage Animal Detection — Master Technical Handbook</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+  @page {
+    size: A4 portrait;
+    margin: 18mm 15mm 18mm 15mm;
+    @bottom-right {
+      content: "Page " counter(page);
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      font-size: 9pt;
+      color: #64748b;
+    }
+    @bottom-left {
+      content: "Autonomous Camouflage Animal Detection | Technical Reference & Defense Manual";
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      font-size: 9pt;
+      color: #64748b;
+    }
+  }
+
+  *, *::before, *::after {
+    box-sizing: border-box;
+  }
+
+  body {
+    font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    color: #1e293b;
+    background-color: #ffffff;
+    font-size: 11pt;
+    line-height: 1.62;
+    margin: 0;
+    padding: 0;
+  }
+
+  .page-break {
+    page-break-after: always;
+    break-after: page;
+  }
+
+  .avoid-break {
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+
+  /* Cover Page */
+  .cover-container {
+    height: 245mm;
+    max-height: 250mm;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: 6mm 4mm;
+    page-break-after: always;
+    break-after: page;
+  }
+
+  .cover-badge {
+    display: inline-block;
+    padding: 6px 14px;
+    background: #ecfdf5;
+    color: #065f46;
+    border: 1.5px solid #a7f3d0;
+    border-radius: 9999px;
+    font-size: 9pt;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    margin-bottom: 12px;
+  }
+
+  .cover-title {
+    font-size: 26pt;
+    font-weight: 800;
+    line-height: 1.15;
+    color: #0f172a;
+    letter-spacing: -0.02em;
+    margin: 0 0 10px 0;
+  }
+
+  .cover-title span {
+    color: #059669;
+  }
+
+  .cover-subtitle {
+    font-size: 11.5pt;
+    font-weight: 500;
+    color: #475569;
+    line-height: 1.45;
+    margin: 0 0 16px 0;
+  }
+
+  .cover-divider {
+    height: 4px;
+    width: 90px;
+    background: linear-gradient(90deg, #059669, #10b981, #34d399);
+    border-radius: 2px;
+    margin-bottom: 16px;
+  }
+
+  .cover-team-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+    margin-top: 4px;
+  }
+
+  .team-box-card {
+    background: #ffffff;
+    border-radius: 8px;
+    padding: 10px 12px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.03);
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+  }
+
+  .border-green { border: 2px solid #10b981; }
+  .border-purple { border: 2px solid #9333ea; }
+  .border-amber { border: 2px solid #f59e0b; }
+  .border-blue { border: 2px solid #0284c7; }
+
+  .team-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 4px;
+  }
+
+  .team-pill {
+    font-size: 8pt;
+    font-weight: 800;
+    padding: 2px 8px;
+    border-radius: 999px;
+    text-transform: uppercase;
+  }
+
+  .pill-green { background: #dcfce7; color: #166534; }
+  .pill-purple { background: #f3e8ff; color: #6b21a8; }
+  .pill-amber { background: #fef3c7; color: #92400e; }
+  .pill-blue { background: #e0f2fe; color: #075985; }
+
+  .team-tag {
+    font-size: 7.5pt;
+    font-weight: 600;
+    color: #64748b;
+  }
+
+  .team-card-title {
+    margin: 2px 0 4px 0;
+    font-size: 9.5pt;
+    font-weight: 700;
+    color: #0f172a;
+    line-height: 1.3;
+  }
+
+  .team-card-desc {
+    margin: 0 0 6px 0;
+    font-size: 8.5pt;
+    color: #475569;
+    line-height: 1.35;
+  }
+
+  .team-files-tag {
+    font-size: 7.5pt;
+    color: #334155;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 4px;
+    padding: 2px 6px;
+  }
+
+  .cover-footer {
+    border-top: 1px solid #e2e8f0;
+    padding-top: 10px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 8.5pt;
+    color: #64748b;
+  }
+
+  /* Part Header Banners */
+  .part-header-card {
+    border-radius: 12px;
+    padding: 18px 20px;
+    margin: 10px 0 20px 0;
+    background: #ffffff;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+  }
+
+  .part-badge {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 999px;
+    font-size: 9pt;
+    font-weight: 800;
+    letter-spacing: 0.05em;
+    margin-bottom: 8px;
+  }
+
+  .badge-green { background: #dcfce7; color: #166534; border: 1px solid #86efac; }
+  .badge-purple { background: #f3e8ff; color: #6b21a8; border: 1px solid #d8b4fe; }
+  .badge-amber { background: #fef3c7; color: #92400e; border: 1px solid #fde68a; }
+  .badge-blue { background: #e0f2fe; color: #075985; border: 1px solid #bae6fd; }
+
+  .part-title {
+    margin: 0 0 8px 0;
+    font-size: 19pt;
+    font-weight: 800;
+    color: #0f172a;
+    line-height: 1.25;
+  }
+
+  .part-subtitle {
+    margin: 0;
+    font-size: 11pt;
+    color: #475569;
+    line-height: 1.5;
+  }
+
+  /* Typography & Structure */
+  h1.section-title {
+    font-size: 17pt;
+    font-weight: 800;
+    color: #0f172a;
+    border-bottom: 2.5px solid #e2e8f0;
+    padding-bottom: 8px;
+    margin: 22px 0 14px 0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  h1.section-title .section-num {
+    background: #059669;
+    color: #ffffff;
+    font-size: 9.5pt;
+    font-weight: 700;
+    padding: 3px 9px;
+    border-radius: 6px;
+  }
+
+  h2.sub-title {
+    font-size: 13.5pt;
+    font-weight: 700;
+    color: #0f172a;
+    margin: 18px 0 10px 0;
+  }
+
+  h3.sub-sub-title {
+    font-size: 11.5pt;
+    font-weight: 700;
+    color: #334155;
+    margin: 14px 0 8px 0;
+  }
+
+  p {
+    margin: 0 0 11px 0;
+    text-align: justify;
+  }
+
+  ul, ol {
+    margin: 6px 0 12px 24px;
+    padding: 0;
+  }
+
+  li {
+    margin-bottom: 5px;
+  }
+
+  /* Callouts */
+  .callout {
+    border-radius: 10px;
+    padding: 13px 16px;
+    margin: 14px 0;
+    border-left: 5px solid;
+    font-size: 10.5pt;
+    line-height: 1.55;
+  }
+
+  .callout-info {
+    background: #f0fdf4;
+    border-left-color: #10b981;
+    color: #065f46;
+  }
+
+  .callout-warning {
+    background: #fffbeb;
+    border-left-color: #f59e0b;
+    color: #92400e;
+  }
+
+  .callout-title {
+    font-weight: 800;
+    font-size: 11pt;
+    margin-bottom: 5px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  /* Tables */
+  table.custom-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 14px 0;
+    font-size: 10pt;
+    border: 1.5px solid #cbd5e1;
+    border-radius: 8px;
+    overflow: hidden;
+  }
+
+  table.custom-table th {
+    background: #0f172a;
+    color: #ffffff;
+    font-weight: 700;
+    text-align: left;
+    padding: 9px 12px;
+    font-size: 10pt;
+  }
+
+  table.custom-table td {
+    padding: 8px 12px;
+    border-bottom: 1px solid #e2e8f0;
+    vertical-align: top;
+    line-height: 1.5;
+  }
+
+  table.custom-table tr:nth-child(even) td {
+    background: #f8fafc;
+  }
+
+  table.custom-table tr:last-child td {
+    border-bottom: none;
+  }
+
+  .table-badge {
+    display: inline-block;
+    padding: 3px 8px;
+    border-radius: 5px;
+    font-size: 8.5pt;
+    font-weight: 700;
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  /* Code Blocks */
+  .code-block {
+    background: #0f172a;
+    color: #e2e8f0;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9.5pt;
+    line-height: 1.5;
+    border-radius: 8px;
+    padding: 12px 16px;
+    margin: 12px 0;
+    overflow-x: auto;
+    border: 1px solid #1e293b;
+    white-space: pre-wrap;
+  }
+
+  .code-header {
+    background: #1e293b;
+    color: #94a3b8;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 8.5pt;
+    padding: 6px 14px;
+    border-top-left-radius: 8px;
+    border-top-right-radius: 8px;
+    border-bottom: 1px solid #334155;
+    margin: 12px 0 0 0;
+    display: flex;
+    justify-content: space-between;
+  }
+
+  .code-header + .code-block {
+    margin-top: 0;
+    border-top-left-radius: 0;
+    border-top-right-radius: 0;
+  }
+
+  code.inline-code {
+    font-family: 'JetBrains Mono', monospace;
+    background: #f1f5f9;
+    color: #0f172a;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 9.5pt;
+    border: 1px solid #cbd5e1;
+  }
+
+  /* Human-Readable Formula Card */
+  .formula-box {
+    background: #f8fafc;
+    border: 1.5px solid #cbd5e1;
+    border-left: 5px solid #059669;
+    border-radius: 8px;
+    padding: 12px 16px;
+    margin: 14px 0;
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+
+  .formula-title {
+    font-size: 10.5pt;
+    font-weight: 800;
+    color: #065f46;
+    margin-bottom: 6px;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+  }
+
+  .formula-main {
+    font-size: 12.5pt;
+    font-weight: 700;
+    color: #0f172a;
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    padding: 9px 14px;
+    margin: 6px 0;
+    text-align: center;
+    line-height: 1.45;
+  }
+
+  .formula-details {
+    font-size: 10pt;
+    color: #334155;
+    margin-top: 6px;
+    line-height: 1.5;
+  }
+
+  .formula-explanation {
+    font-size: 9.5pt;
+    color: #475569;
+    background: #f1f5f9;
+    border-radius: 6px;
+    padding: 8px 12px;
+    margin-top: 8px;
+    line-height: 1.5;
+  }
+
+  /* SVG Diagrams Container */
+  .diagram-container {
+    background: #f8fafc;
+    border: 1.5px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 16px;
+    margin: 16px 0;
+    text-align: center;
+  }
+
+  .diagram-caption {
+    font-size: 9pt;
+    color: #64748b;
+    font-weight: 700;
+    margin-top: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  /* Viva Card Styling */
+  .viva-card {
+    background: #ffffff;
+    border: 1.5px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 15px 18px;
+    margin: 15px 0;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.03);
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+
+  .viva-q {
+    font-size: 11.5pt;
+    font-weight: 800;
+    color: #0f172a;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  .viva-badge {
+    background: #0f766e;
+    color: #ffffff;
+    font-size: 8.5pt;
+    font-weight: 800;
+    padding: 3px 8px;
+    border-radius: 5px;
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+
+  .viva-concept {
+    font-size: 9pt;
+    font-weight: 700;
+    color: #0369a1;
+    background: #f0f9ff;
+    border: 1px solid #bae6fd;
+    padding: 4px 10px;
+    border-radius: 6px;
+    margin-bottom: 10px;
+    display: inline-block;
+  }
+
+  .viva-ans {
+    font-size: 10.5pt;
+    color: #334155;
+    line-height: 1.6;
+  }
+
+  .viva-ans ul, .viva-ans ol {
+    margin: 6px 0 6px 20px;
+    padding: 0;
+  }
+
+  .viva-ans li {
+    margin-bottom: 4px;
+  }
+
+  /* Two Column Grid */
+  .two-col {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 14px;
+    margin: 12px 0;
+  }
+
+  .card-box {
+    background: #ffffff;
+    border: 1.5px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 14px 16px;
+  }
+
+  .card-box h4 {
+    margin: 0 0 8px 0;
+    font-size: 11pt;
+    color: #0f172a;
+    font-weight: 700;
+  }
+</style>
+</head>
+<body>
+
+<!-- ==================== COVER PAGE ==================== -->
+<div class="cover-container">
+  <div class="cover-top-content">
+    <div class="cover-badge">Academic Reference & Project Defense Manual</div>
+    <h1 class="cover-title">Autonomous Camouflage<br><span>Animal Detection</span> System</h1>
+    <p class="cover-subtitle">
+      A Comprehensive Technical Treatise and Subsystem Division Handbook for ROS 2 Humble & Gazebo Classic 11 Simulation, Contrast-Enhanced YOLOv8 Perception, Differential Drive Kinematics, Procedural World Synthesis, and Closed-Loop Autonomous Visual Servoing.
+    </p>
+    <div class="cover-divider"></div>
+
+    <div class="cover-team-grid">
+      <div class="team-box-card border-green">
+        <div class="team-card-header">
+          <span class="team-pill pill-green">Part 1</span>
+          <span class="team-tag">Robotics & Hardware</span>
+        </div>
+        <h4 class="team-card-title">Robot Kinematics, Mechanical Modeling & Optical Sensors</h4>
+        <p class="team-card-desc">URDF design, differential drive forward/inverse kinematics, turning radius math, wheel contact dynamics, virtual pinhole camera sensor, and coordinate transform trees (TF2).</p>
+        <div class="team-files-tag"><strong>Primary Files:</strong> animal_robot.urdf, spawn_robot.launch.py</div>
+      </div>
+
+      <div class="team-box-card border-purple">
+        <div class="team-card-header">
+          <span class="team-pill pill-purple">Part 2</span>
+          <span class="team-tag">Simulation & Ecology</span>
+        </div>
+        <h4 class="team-card-title">Gazebo 3D World, Procedural Forests & Domain Randomization</h4>
+        <p class="team-card-desc">SDF 1.6 architecture, procedural forest generator, obstacle spacing algorithms, multi-tier camouflage concealment, companion natural cover, solar lighting shifts, and CPU shadow optimizations.</p>
+        <div class="team-files-tag"><strong>Primary Files:</strong> generate_random_world.py, animal_world.world, models/</div>
+      </div>
+
+      <div class="team-box-card border-amber">
+        <div class="team-card-header">
+          <span class="team-pill pill-amber">Part 3</span>
+          <span class="team-tag">Vision & Deep Learning</span>
+        </div>
+        <h4 class="team-card-title">CIELAB CLAHE Micro-Contrast & YOLOv8 Camouflage Perception</h4>
+        <p class="team-card-desc">Principles of camouflage crypsis, CIELAB color space, CLAHE contrast filter, YOLOv8 deep architecture, taxonomic ungulate prior mapping, monocular depth math, and tactical HUD.</p>
+        <div class="team-files-tag"><strong>Primary Files:</strong> ros_recognition_yolo.py, recognition.launch.py</div>
+      </div>
+
+      <div class="team-box-card border-blue">
+        <div class="team-card-header">
+          <span class="team-pill pill-blue">Part 4</span>
+          <span class="team-tag">Autonomy, AI & DevOps</span>
+        </div>
+        <h4 class="team-card-title">Autonomous Patrol FSM, Visual Servoing, AI Training & Docker</h4>
+        <p class="team-card-desc">4-state patrol state machine, proportional visual servoing steering law, synthetic dataset collection, YOLO training hyperparameters, and Docker X11 deployment architecture.</p>
+        <div class="team-files-tag"><strong>Primary Files:</strong> autonomous_patrol.py, train_camouflage_yolo.py, Dockerfile</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="cover-footer">
+    <span>Department of Computer Science & Robotics Engineering</span>
+    <span>Autonomous Mobile Systems & Computer Vision Capstone</span>
+    <span>Academic Year 2026-2027</span>
+  </div>
+</div>
+
+<!-- ==================== MASTER TABLE OF CONTENTS & SUBSYSTEM MATRIX ==================== -->
+<div class="page-break">
+  <h1 class="section-title"><span class="section-num">00</span> Master Subsystem Syllabus & Cross-Integration</h1>
+  
+  <p>
+    This project is organized into <strong>4 Specialized Technical Modules</strong>. Each part contains exhaustive architectural explanations, clear mathematical formulations in simple English, complete code walkthroughs, parameter justifications, and dedicated Viva / Oral Exam defense questions.
+  </p>
+
+  <h2 class="sub-title">Master Subsystem Allocation Matrix</h2>
+  <table class="custom-table">
+    <thead>
+      <tr>
+        <th style="width: 15%;">Project Part</th>
+        <th style="width: 25%;">Subsystem Domain</th>
+        <th style="width: 44%;">Core Topics & Workings to Master</th>
+        <th style="width: 16%;">Source Files</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong>Part 1</strong></td>
+        <td><strong>Robot Kinematics, URDF & Sensor Physics</strong></td>
+        <td>
+          &bull; 2-Wheel Differential Drive Forward & Inverse Kinematics<br>
+          &bull; Turning Radius, Instantaneous Center of Curvature & No-Slip Limits<br>
+          &bull; URDF rigid body link/joint trees, center of gravity & inertia<br>
+          &bull; Gazebo diff-drive plugin (<code class="inline-code">libgazebo_ros_diff_drive.so</code>)<br>
+          &bull; Pinhole camera sensor simulation & TF2 coordinate frames
+        </td>
+        <td><span class="table-badge badge-green">animal_robot.urdf</span><br><span class="table-badge badge-green">spawn_robot.launch.py</span></td>
+      </tr>
+      <tr>
+        <td><strong>Part 2</strong></td>
+        <td><strong>Gazebo 3D Simulation & Procedural Worlds</strong></td>
+        <td>
+          &bull; SDF 1.6 world specification vs URDF<br>
+          &bull; Procedural generator: Distance-based obstacle spacing<br>
+          &bull; 4 Camouflage concealment tiers (Close, Medium, Far, Flank)<br>
+          &bull; Companion natural cover (trees & boulders within 1.2m of targets)<br>
+          &bull; Solar domain randomization (sun angle and warmth shifts)<br>
+          &bull; Visual vs Collision mesh decoupling for fast constant-time physics<br>
+          &bull; Shadow disabling optimization for 1.0 Real Time Factor (RTF)
+        </td>
+        <td><span class="table-badge badge-purple">generate_random_world.py</span><br><span class="table-badge badge-purple">animal_world.world</span><br><span class="table-badge badge-purple">models/</span></td>
+      </tr>
+      <tr>
+        <td><strong>Part 3</strong></td>
+        <td><strong>Computer Vision & YOLOv8 Camouflage AI</strong></td>
+        <td>
+          &bull; Principles of Camouflage (crypsis, edge disruption, background matching)<br>
+          &bull; CIELAB CLAHE micro-texture contrast filter (4&times;4 grid, clip 3.0)<br>
+          &bull; YOLOv8n deep architecture (C2f modules, PAN-Net, decoupled head)<br>
+          &bull; Ungulate taxonomic prior mapping (COCO quadrupeds ➔ DEER)<br>
+          &bull; Monocular pinhole depth calculation: Distance = 515.025 / Box Height<br>
+          &bull; Foliage false-positive suppression filter (confidence threshold 0.65)<br>
+          &bull; Temporal box stabilization & tactical OpenCV HUD overlay
+        </td>
+        <td><span class="table-badge badge-amber">ros_recognition_yolo.py</span><br><span class="table-badge badge-amber">recognition.launch.py</span></td>
+      </tr>
+      <tr>
+        <td><strong>Part 4</strong></td>
+        <td><strong>Autonomous Navigation, AI Training & DevOps</strong></td>
+        <td>
+          &bull; 4-State Finite State Machine (SCAN, CREEP, TRACK, BOUNCE)<br>
+          &bull; Proportional visual servoing steering controller (Kp = 0.0028)<br>
+          &bull; Target approach & 5.0-second stationary inspection hold at 3.0m<br>
+          &bull; Synthetic dataset capture node (<code class="inline-code">capture_dataset.py</code>)<br>
+          &bull; YOLO training hyperparameters (HSV jitter, mosaic, mixup)<br>
+          &bull; Two-phase training: synthetic pre-training to COD10K fine-tuning<br>
+          &bull; Docker multi-layer architecture, X11 forwarding & colcon builds
+        </td>
+        <td><span class="table-badge badge-blue">autonomous_patrol.py</span><br><span class="table-badge badge-blue">train_camouflage_yolo.py</span><br><span class="table-badge badge-blue">capture_dataset.py</span><br><span class="table-badge badge-blue">Dockerfile, start_docker.sh</span></td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h2 class="sub-title">System-Wide Inter-Module Dataflow Topology</h2>
+  <div class="diagram-container avoid-break">
+    <svg width="100%" height="160" viewBox="0 0 760 160" xmlns="http://www.w3.org/2000/svg">
+      <!-- Part 2 Box -->
+      <rect x="10" y="20" width="165" height="110" rx="8" fill="#faf5ff" stroke="#9333ea" stroke-width="2" />
+      <text x="92" y="42" font-family="'Plus Jakarta Sans', sans-serif" font-size="10" font-weight="700" fill="#6b21a8" text-anchor="middle">PART 2: GAZEBO WORLD</text>
+      <text x="92" y="58" font-family="'Plus Jakarta Sans', sans-serif" font-size="8" fill="#7e22ce" text-anchor="middle">Simulation & Environment</text>
+      <rect x="25" y="70" width="135" height="48" rx="4" fill="#ffffff" stroke="#d8b4fe" />
+      <text x="92" y="88" font-family="'JetBrains Mono', monospace" font-size="7.5" fill="#334155" text-anchor="middle">Procedural Forest & Deer</text>
+      <text x="92" y="103" font-family="'JetBrains Mono', monospace" font-size="7.5" fill="#334155" text-anchor="middle">ODE Physics & Lighting</text>
+
+      <!-- Arrow Part 2 to Part 1 -->
+      <path d="M 175 75 L 205 75" fill="none" stroke="#64748b" stroke-width="2" marker-end="url(#arrow-flow)" />
+
+      <!-- Part 1 Box -->
+      <rect x="210" y="20" width="165" height="110" rx="8" fill="#ecfdf5" stroke="#10b981" stroke-width="2" />
+      <text x="292" y="42" font-family="'Plus Jakarta Sans', sans-serif" font-size="10" font-weight="700" fill="#065f46" text-anchor="middle">PART 1: ROBOT & SENSORS</text>
+      <text x="292" y="58" font-family="'Plus Jakarta Sans', sans-serif" font-size="8" fill="#047857" text-anchor="middle">Kinematics & Hardware</text>
+      <rect x="225" y="70" width="135" height="48" rx="4" fill="#ffffff" stroke="#a7f3d0" />
+      <text x="292" y="88" font-family="'JetBrains Mono', monospace" font-size="7.5" fill="#334155" text-anchor="middle">URDF Diff-Drive Wheels</text>
+      <text x="292" y="103" font-family="'JetBrains Mono', monospace" font-size="7.5" fill="#334155" text-anchor="middle">Pinhole Camera Plugin</text>
+
+      <!-- Arrow Part 1 to Part 3 -->
+      <path d="M 375 75 L 405 75" fill="none" stroke="#059669" stroke-width="2.5" marker-end="url(#arrow-flow-green)" />
+      <text x="390" y="66" font-family="'JetBrains Mono', monospace" font-size="7" fill="#047857" text-anchor="middle">Image</text>
+
+      <!-- Part 3 Box -->
+      <rect x="410" y="20" width="165" height="110" rx="8" fill="#fffbeb" stroke="#f59e0b" stroke-width="2" />
+      <text x="492" y="42" font-family="'Plus Jakarta Sans', sans-serif" font-size="10" font-weight="700" fill="#92400e" text-anchor="middle">PART 3: VISION & YOLO</text>
+      <text x="492" y="58" font-family="'Plus Jakarta Sans', sans-serif" font-size="8" fill="#b45309" text-anchor="middle">Perception & Detection</text>
+      <rect x="425" y="70" width="135" height="48" rx="4" fill="#ffffff" stroke="#fde68a" />
+      <text x="492" y="88" font-family="'JetBrains Mono', monospace" font-size="7.5" fill="#334155" text-anchor="middle">CIELAB CLAHE Filter</text>
+      <text x="492" y="103" font-family="'JetBrains Mono', monospace" font-size="7.5" fill="#334155" text-anchor="middle">YOLOv8 + Depth Math</text>
+
+      <!-- Arrow Part 3 to Part 4 -->
+      <path d="M 575 75 L 605 75" fill="none" stroke="#d97706" stroke-width="2.5" marker-end="url(#arrow-flow-amber)" />
+      <text x="590" y="66" font-family="'JetBrains Mono', monospace" font-size="7" fill="#b45309" text-anchor="middle">JSON</text>
+
+      <!-- Part 4 Box -->
+      <rect x="610" y="20" width="145" height="110" rx="8" fill="#f0f9ff" stroke="#0284c7" stroke-width="2" />
+      <text x="682" y="42" font-family="'Plus Jakarta Sans', sans-serif" font-size="9.5" font-weight="700" fill="#0369a1" text-anchor="middle">PART 4: AUTONOMY</text>
+      <text x="682" y="58" font-family="'Plus Jakarta Sans', sans-serif" font-size="8" fill="#0284c7" text-anchor="middle">Control & AI Pipeline</text>
+      <rect x="620" y="70" width="125" height="48" rx="4" fill="#ffffff" stroke="#bae6fd" />
+      <text x="682" y="88" font-family="'JetBrains Mono', monospace" font-size="7.5" fill="#334155" text-anchor="middle">4-State FSM Patrol</text>
+      <text x="682" y="103" font-family="'JetBrains Mono', monospace" font-size="7.5" fill="#334155" text-anchor="middle">Visual Servoing Loop</text>
+
+      <!-- Feedback Arrow Part 4 back to Part 1 Diff-Drive -->
+      <path d="M 682 130 L 682 148 L 292 148 L 292 130" fill="none" stroke="#ef4444" stroke-width="2" stroke-dasharray="4,3" marker-end="url(#arrow-flow-red)" />
+      <text x="492" y="144" font-family="'JetBrains Mono', monospace" font-size="7.5" fill="#dc2626" text-anchor="middle">cmd_vel (geometry_msgs/Twist 10 Hz) ➔ Actuate Left/Right Wheels</text>
+
+      <defs>
+        <marker id="arrow-flow" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
+          <path d="M 0 1 L 10 5 L 0 9 z" fill="#64748b" />
+        </marker>
+        <marker id="arrow-flow-green" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
+          <path d="M 0 1 L 10 5 L 0 9 z" fill="#059669" />
+        </marker>
+        <marker id="arrow-flow-amber" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
+          <path d="M 0 1 L 10 5 L 0 9 z" fill="#d97706" />
+        </marker>
+        <marker id="arrow-flow-red" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
+          <path d="M 0 1 L 10 5 L 0 9 z" fill="#ef4444" />
+        </marker>
+      </defs>
+    </svg>
+    <div class="diagram-caption">Figure 0.1: Cross-Subsystem Modular Pipeline & Cyclic Control Loop</div>
+  </div>
+</div>
+
+<!-- ==================== PART 1 ==================== -->
+<div class="page-break">
+  <div class="part-header-card border-green">
+    <div class="part-badge badge-green">MODULE 1 OF 4</div>
+    <h1 class="part-title">Part 1: Robot Kinematics, Mechanical Modeling & Optical Sensor Simulation</h1>
+    <p class="part-subtitle">
+      Comprehensive technical handbook covering robot physical design, URDF XML structure, differential drive forward and inverse kinematics, turning radius physics, wheel contact dynamics, virtual pinhole camera simulation, and coordinate transform trees (TF2).
+    </p>
+  </div>
+
+  <h2 class="sub-title">1.1 Subsystem Role Distribution & Core Ownership</h2>
+  <table class="custom-table">
+    <thead>
+      <tr>
+        <th style="width: 25%;">Engineering Role</th>
+        <th style="width: 25%;">Primary Subsystem</th>
+        <th style="width: 32%;">Specific Technical Responsibilities</th>
+        <th style="width: 18%;">Core Viva Focus</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong>Mechanical Modeling Lead</strong></td>
+        <td><strong>URDF Architecture & Inertia Tensors</strong></td>
+        <td>
+          &bull; Authoring <code class="inline-code">animal_robot.urdf</code> links and joints.<br>
+          &bull; Mass distribution (3.0kg chassis, 0.3kg wheels, 0.2kg caster).<br>
+          &bull; Principal moment of inertia matrix calculations.<br>
+          &bull; Low center of gravity placement to prevent tilting.
+        </td>
+        <td>URDF vs SDF, link/joint trees, inertia tensors, center of mass stability.</td>
+      </tr>
+      <tr>
+        <td><strong>Kinematics & Actuation Lead</strong></td>
+        <td><strong>Differential Drive Motion Mathematics</strong></td>
+        <td>
+          &bull; Formulating forward and inverse differential drive equations.<br>
+          &bull; Calculating Instantaneous Center of Curvature (ICC/ICR).<br>
+          &bull; Formulating the non-holonomic no-slip constraint.<br>
+          &bull; Configuring <code class="inline-code">libgazebo_ros_diff_drive.so</code> (torque, acceleration, track).
+        </td>
+        <td>Forward/inverse kinematics formulas, wheel speed mapping, non-holonomic limits.</td>
+      </tr>
+      <tr>
+        <td><strong>Sensors & Transforms Lead</strong></td>
+        <td><strong>Optical Sensor Simulation & TF2 Trees</strong></td>
+        <td>
+          &bull; Integrating <code class="inline-code">libgazebo_ros_camera.so</code> virtual pinhole plugin.<br>
+          &bull; Establishing 80° HFOV, 640x480 resolution, and 15 Hz update rate.<br>
+          &bull; Configuring the TF2 transform tree (<code class="inline-code">odom ➔ chassis ➔ camera_frame</code>).<br>
+          &bull; Authoring <code class="inline-code">spawn_robot.launch.py</code> and <code class="inline-code">robot_state_publisher</code>.
+        </td>
+        <td>Pinhole camera model, focal length, coordinate frames, TF2 tree.</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h2 class="sub-title">1.2 Robot Physical Specifications & Dimensional Engineering</h2>
+  <p>
+    The mobile robot (<code class="inline-code">animal_robot</code>) is engineered as a compact, highly agile differential-drive platform designed to maneuver through dense woodland vegetation without snagging on tree trunks or boulders.
+  </p>
+
+  <div class="two-col avoid-break">
+    <div class="card-box">
+      <h4>Chassis Structure & Inertia</h4>
+      <ul>
+        <li><strong>Chassis Dimensions:</strong> Length 0.22 meters, Width 0.12 meters, Height 0.06 meters.</li>
+        <li><strong>Chassis Net Mass:</strong> 3.0 kilograms.</li>
+        <li><strong>Center of Mass (COM):</strong> Positioned at [0.0, 0.0, -0.02] meters. Placing the mass center below the wheel axle level provides strong passive pitch and roll self-righting stability during sharp acceleration.</li>
+        <li><strong>Inertia Tensor:</strong>
+          <br><code class="inline-code">Ixx = 0.008, Iyy = 0.015, Izz = 0.020 kg&middot;m²</code>.
+        </li>
+      </ul>
+    </div>
+    <div class="card-box">
+      <h4>Wheel Actuators & Caster Sphere</h4>
+      <ul>
+        <li><strong>Drive Wheels:</strong> 2 actuated wheels, radius r = 0.035 meters (diameter 0.07 meters), length 0.02 meters, mass 0.3 kilograms each.</li>
+        <li><strong>Track Separation (L):</strong> 0.12 meters between left and right wheel midpoints.</li>
+        <li><strong>Wheel Friction:</strong> High traction &mu;1 = 1.5, &mu;2 = 1.5, stiffness Kp = 100000.0, Kd = 10.0.</li>
+        <li><strong>Passive Support:</strong> Front caster sphere, radius 0.015 meters, mass 0.2 kilograms, near-zero friction &mu; = 0.001 allowing frictionless omnidirectional gliding.</li>
+      </ul>
+    </div>
+  </div>
+
+  <h2 class="sub-title">1.3 Differential Drive Kinematics (Human-Readable Formulations)</h2>
+  <p>
+    The robot operates on a 2-dimensional flat ground plane. At any moment, the robot's physical state is defined by its <strong>position (X, Y)</strong> and its <strong>heading angle (&theta;)</strong> pointing toward where it is facing.
+  </p>
+
+  <!-- Formula 1: Forward Speed -->
+  <div class="formula-box">
+    <div class="formula-title">1. Forward Speed Formula (v)</div>
+    <div class="formula-main">
+      Forward Velocity (v) = (Right Wheel Speed + Left Wheel Speed) &divide; 2
+    </div>
+    <div class="formula-details">
+      In terms of wheel spin: <strong>v = 0.5 &times; Wheel Radius &times; (&omega;<sub>Right</sub> + &omega;<sub>Left</sub>)</strong>
+      <br>Using our robot's wheel radius (r = 0.035 meters): <strong>v = 0.0175 &times; (&omega;<sub>Right</sub> + &omega;<sub>Left</sub>) m/s</strong>
+    </div>
+    <div class="formula-explanation">
+      <strong>What this means in plain words:</strong> The robot's straight-ahead velocity is simply the average ground speed of the two drive wheels. If both wheels spin forward at the exact same speed, the robot travels straight forward.
+    </div>
+  </div>
+
+  <!-- Formula 2: Turning Speed -->
+  <div class="formula-box">
+    <div class="formula-title">2. Turning Yaw Speed Formula (&omega;)</div>
+    <div class="formula-main">
+      Turning Rate (&omega;) = (Right Wheel Speed &minus; Left Wheel Speed) &divide; Wheel Track Distance (L)
+    </div>
+    <div class="formula-details">
+      In terms of wheel spin: <strong>&omega; = (Wheel Radius / Track Distance) &times; (&omega;<sub>Right</sub> &minus; &omega;<sub>Left</sub>)</strong>
+      <br>Using our robot dimensions (r = 0.035 m, Track L = 0.12 m): <strong>&omega; = 0.2917 &times; (&omega;<sub>Right</sub> &minus; &omega;<sub>Left</sub>) rad/s</strong>
+    </div>
+    <div class="formula-explanation">
+      <strong>What this means in plain words:</strong> Turning is created by the speed difference between the two wheels. If the right wheel spins faster than the left wheel, the robot curves to the left. If the wheels spin in opposite directions at equal speed, the robot spins in place around its own center!
+    </div>
+  </div>
+
+  <!-- Formula 3: Inverse Kinematics -->
+  <div class="formula-box">
+    <div class="formula-title">3. Inverse Kinematics: How the Computer Commands the Wheel Motors</div>
+    <div class="formula-main">
+      Right Wheel Motor Speed (&omega;<sub>Right</sub>) = (Desired Forward Speed + 0.5 &times; Track &times; Desired Turn Speed) &divide; Wheel Radius
+      <br>Left Wheel Motor Speed (&omega;<sub>Left</sub>) = (Desired Forward Speed &minus; 0.5 &times; Track &times; Desired Turn Speed) &divide; Wheel Radius
+    </div>
+    <div class="formula-details">
+      Plugging in our robot values (r = 0.035 meters, Track L = 0.12 meters):
+      <br>&bull; <strong>Right Motor Speed (&omega;<sub>Right</sub>) = (v + 0.06 &times; &omega;) &divide; 0.035 rad/s</strong>
+      <br>&bull; <strong>Left Motor Speed (&omega;<sub>Left</sub>) = (v &minus; 0.06 &times; &omega;) &divide; 0.035 rad/s</strong>
+    </div>
+    <div class="formula-explanation">
+      <strong>What this means in plain words:</strong> When the autonomous navigation system decides that the robot should move forward at 0.22 m/s while gently turning at 0.14 rad/s, these two formulas calculate the exact motor speeds to send to each wheel. This runs automatically at 50 Hz inside the Gazebo differential drive plugin.
+    </div>
+  </div>
+
+  <!-- Formula 4: Turning Radius & ICC -->
+  <div class="formula-box">
+    <div class="formula-title">4. Turning Radius (R) & Instantaneous Center of Curvature</div>
+    <div class="formula-main">
+      Turning Radius (R) = Forward Speed (v) &divide; Turning Speed (&omega;)
+    </div>
+    <div class="formula-details">
+      In terms of wheel spin: <strong>R = 0.06 &times; [(&omega;<sub>Right</sub> + &omega;<sub>Left</sub>) / (&omega;<sub>Right</sub> &minus; &omega;<sub>Left</sub>)] meters</strong>
+    </div>
+    <div class="formula-explanation">
+      <strong>What this means in plain words:</strong>
+      <br>&bull; <strong>Straight line motion:</strong> Both wheels spin at the same speed &rarr; Turning Radius is infinite (no turn).
+      <br>&bull; <strong>In-place zero-radius spin:</strong> Wheels spin in opposite directions (&omega;<sub>Right</sub> = &minus;&omega;<sub>Left</sub>) &rarr; Turning Radius = 0 (the robot spins on its own center point like a tank, which is used in the 360° environmental scan).
+    </div>
+  </div>
+
+  <!-- Formula 5: No-Slip Driving Constraint -->
+  <div class="formula-box">
+    <div class="formula-title">5. Driving Constraint: No Sideways Slipping (Non-Holonomic Motion)</div>
+    <div class="formula-main">
+      Instantaneous Lateral Sliding Speed = 0.0 m/s
+    </div>
+    <div class="formula-explanation">
+      <strong>What this means in plain words:</strong> Like a regular passenger car, a differential-drive robot cannot slide sideways directly. The wheels grip the ground and only allow motion forward, backward, or in an arc. To reach a spot to its side, the robot must first turn to face that direction and then drive forward.
+    </div>
+  </div>
+
+  <h2 class="sub-title">1.4 Comprehensive URDF XML Code Walkthrough</h2>
+  <p>
+    The robot kinematic tree is defined in <code class="inline-code">packages/animal_description/urdf/animal_robot.urdf</code>. Let us analyze every essential XML block:
+  </p>
+
+  <div class="code-header"><span>Chassis Link & Visual / Collision Definitions</span><span>animal_robot.urdf</span></div>
+  <div class="code-block">
+&lt;link name="base_link"&gt;&lt;/link&gt;
+
+&lt;link name="chassis"&gt;
+  &lt;pose&gt;0 0 0 0 0 0&lt;/pose&gt;
+  &lt;inertial&gt;
+    &lt;mass value="3.0"/&gt;
+    &lt;origin rpy="0 0 0" xyz="0 0 -0.02"/&gt;
+    &lt;inertia ixx="0.008" ixy="0" ixz="0" iyy="0.015" iyz="0" izz="0.020"/&gt;
+  &lt;/inertial&gt;
+  &lt;collision name="collision_chassis"&gt;
+    &lt;geometry&gt;
+      &lt;box size="0.22 0.12 0.06"/&gt;
+    &lt;/geometry&gt;
+  &lt;/collision&gt;
+  &lt;visual name="visual_chassis"&gt;
+    &lt;geometry&gt;
+      &lt;box size="0.22 0.12 0.06"/&gt;
+    &lt;/geometry&gt;
+    &lt;material name="red"/&gt;
+  &lt;/visual&gt;
+&lt;/link&gt;
+
+&lt;joint name="base_link_joint" type="fixed"&gt;
+  &lt;origin rpy="0 0 0" xyz="0 0 0"/&gt;
+  &lt;parent link="base_link"/&gt;
+  &lt;child link="chassis"/&gt;
+&lt;/joint&gt;
+  </div>
+
+  <div class="code-header"><span>Continuous Drive Wheel Joints & Actuators</span><span>animal_robot.urdf</span></div>
+  <div class="code-block">
+&lt;!-- RIGHT DRIVE WHEEL --&gt;
+&lt;joint name="joint_right_wheel" type="continuous"&gt;
+  &lt;origin rpy="0 0 0" xyz="-0.05 0.06 -0.025"/&gt;
+  &lt;child link="right_wheel"/&gt;
+  &lt;parent link="chassis"/&gt;
+  &lt;axis rpy="0 0 0" xyz="0 1 0"/&gt;
+  &lt;limit effort="20.0" velocity="20.0"/&gt;
+  &lt;dynamics damping="0.1" friction="0.05"/&gt;
+&lt;/joint&gt;
+
+&lt;!-- LEFT DRIVE WHEEL --&gt;
+&lt;joint name="joint_left_wheel" type="continuous"&gt;
+  &lt;origin rpy="0 0 0" xyz="-0.05 -0.06 -0.025"/&gt;
+  &lt;child link="left_wheel"/&gt;
+  &lt;parent link="chassis"/&gt;
+  &lt;axis rpy="0 0 0" xyz="0 1 0"/&gt;
+  &lt;limit effort="20.0" velocity="20.0"/&gt;
+  &lt;dynamics damping="0.1" friction="0.05"/&gt;
+&lt;/joint&gt;
+  </div>
+
+  <div class="code-header"><span>Front Passive Caster Sphere (Frictionless Support)</span><span>animal_robot.urdf</span></div>
+  <div class="code-block">
+&lt;link name="front_pitch_link"&gt;
+  &lt;inertial&gt;
+    &lt;mass value="0.2"/&gt;
+    &lt;origin rpy="0 0 0" xyz="0 0 0"/&gt;
+    &lt;inertia ixx="0.00005" ixy="0" ixz="0" iyy="0.00005" iyz="0" izz="0.00005"/&gt;
+  &lt;/inertial&gt;
+  &lt;collision name="front_collision"&gt;
+    &lt;geometry&gt;&lt;sphere radius="0.015"/&gt;&lt;/geometry&gt;
+  &lt;/collision&gt;
+  &lt;visual name="front_visual"&gt;
+    &lt;geometry&gt;&lt;sphere radius="0.015"/&gt;&lt;/geometry&gt;
+    &lt;material name="green"/&gt;
+  &lt;/visual&gt;
+&lt;/link&gt;
+
+&lt;gazebo reference="front_pitch_link"&gt;
+  &lt;kp&gt;50000.0&lt;/kp&gt;
+  &lt;kd&gt;20.0&lt;/kd&gt;
+  &lt;mu1&gt;0.001&lt;/mu1&gt; &lt;!-- Ultra-low friction for smooth turning --&gt;
+  &lt;mu2&gt;0.001&lt;/mu2&gt;
+  &lt;material&gt;Gazebo/Green&lt;/material&gt;
+&lt;/gazebo&gt;
+  </div>
+
+  <h2 class="sub-title">1.5 Gazebo Differential Drive Plugin Integration</h2>
+  <p>
+    The ODE physics engine in Gazebo does not accept raw velocity commands directly on joints without a controller. The <code class="inline-code">libgazebo_ros_diff_drive.so</code> plugin acts as the digital closed-loop servo amplifier:
+  </p>
+  <ul>
+    <li>It binds to <code class="inline-code">joint_right_wheel</code> and <code class="inline-code">joint_left_wheel</code>.</li>
+    <li>It subscribes to <code class="inline-code">/animal_robot/cmd_vel</code> (<code class="inline-code">geometry_msgs/msg/Twist</code>).</li>
+    <li>It applies torque (up to 20.0 N&middot;m) with maximum rotational acceleration limit 5.0 rad/s² to reach target speeds smoothly.</li>
+    <li>It integrates wheel revolutions over time to publish dead-reckoning odometry on <code class="inline-code">/animal_robot/odom</code> and broadcasts the spatial transform from <code class="inline-code">odom</code> to <code class="inline-code">chassis</code>.</li>
+  </ul>
+
+  <h2 class="sub-title">1.6 Optical Sensor Pinhole Camera Physics & TF2 Tree</h2>
+  <p>
+    The camera is rigidly mounted at coordinates [x=0.09, y=0.0, z=0.08] meters relative to the chassis origin, elevated above the wheel plane to maintain an unobstructed view across the ground plane:
+  </p>
+  <div class="code-block">
+&lt;gazebo reference="rgb_cam_camera_link_frame"&gt;
+  &lt;sensor type="camera" name="rgb_cam"&gt;
+    &lt;always_on&gt;1&lt;/always_on&gt;
+    &lt;update_rate&gt;15.0&lt;/update_rate&gt;
+    &lt;camera name="rgb_cam"&gt;
+      &lt;horizontal_fov&gt;1.3962634&lt;/horizontal_fov&gt; &lt;!-- 80 degrees --&gt;
+      &lt;image&gt;
+        &lt;width&gt;640&lt;/width&gt;
+        &lt;height&gt;480&lt;/height&gt;
+        &lt;format&gt;R8G8B8&lt;/format&gt;
+      &lt;/image&gt;
+      &lt;clip&gt;&lt;near&gt;0.05&lt;/near&gt;&lt;far&gt;25.0&lt;/far&gt;&lt;/clip&gt;
+    &lt;/camera&gt;
+    &lt;plugin name="camera_controller" filename="libgazebo_ros_camera.so"&gt;
+      &lt;ros&gt;
+        &lt;remapping&gt;image_raw:=/rgb_cam/image_raw&lt;/remapping&gt;
+        &lt;remapping&gt;camera_info:=/rgb_cam/camera_info&lt;/remapping&gt;
+      &lt;/ros&gt;
+      &lt;frame_name&gt;rgb_cam_camera_link_frame&lt;/frame_name&gt;
+    &lt;/plugin&gt;
+  &lt;/sensor&gt;
+&lt;/gazebo&gt;
+  </div>
+
+  <p>
+    The <strong>TF2 Transform Hierarchy</strong> established by <code class="inline-code">robot_state_publisher</code> and the differential drive plugin is:
+    <br><code class="inline-code">odom</code> (Global Odometry) &rarr; <code class="inline-code">chassis</code> (Robot Base Link) &rarr; <code class="inline-code">rgb_cam_camera_link</code> (Physical Mount) &rarr; <code class="inline-code">rgb_cam_camera_link_frame</code> (Optical Sensor Center).
+  </p>
+
+  <h2 class="sub-title">1.7 Part 1 Dedicated Viva & Oral Exam Defense Guide</h2>
+
+  <div class="viva-card">
+    <div class="viva-q"><span class="viva-badge">Q1.1</span> How does the robot turn in place with zero turning radius, and how do the wheel speeds relate?</div>
+    <div class="viva-concept">Topic Focus: Differential Drive Kinematics</div>
+    <div class="viva-ans">
+      <strong>Model Answer:</strong>
+      To turn in place with a zero turning radius, the robot commands both drive wheels to spin at the exact same rotational speed but in opposite directions (Right Wheel = &minus;Left Wheel). 
+      <br><br>
+      Since the forward speed is the sum of both wheel speeds divided by two, the net forward speed becomes zero (v = 0 m/s). Meanwhile, the turning speed is proportional to the difference between the wheels, producing maximum rotation around the center point between the wheels. This allows our robot to execute 360-degree environmental scans in dense brush without needing any space to move forward or backward.
+    </div>
+  </div>
+
+  <div class="viva-card">
+    <div class="viva-q"><span class="viva-badge">Q1.2</span> Why is the chassis center of mass (COM) set at [0, 0, -0.02] meters instead of [0, 0, 0]?</div>
+    <div class="viva-concept">Topic Focus: Mechanical Stability & Dynamics</div>
+    <div class="viva-ans">
+      <strong>Model Answer:</strong>
+      Setting the center of mass 2 centimeters below the wheel axle creates a natural pendulum-like self-stabilizing effect. If the center of mass were positioned high above the wheels, rapid acceleration or sudden braking would cause the chassis to pitch and tilt aggressively forward or backward. A low center of mass keeps the camera horizontal and stable, preventing distorted camera frames.
+    </div>
+  </div>
+
+  <div class="viva-card">
+    <div class="viva-q"><span class="viva-badge">Q1.3</span> What is the role of <code class="inline-code">robot_state_publisher</code> and how does it interface with URDF?</div>
+    <div class="viva-concept">Topic Focus: Coordinate Systems & TF2 Tree</div>
+    <div class="viva-ans">
+      <strong>Model Answer:</strong>
+      <code class="inline-code">robot_state_publisher</code> reads the robot description XML (<code class="inline-code">animal_robot.urdf</code>) and listens to the joint positions published on <code class="inline-code">/joint_states</code>. It calculates the 3D position and orientation of every single component of the robot and broadcasts them dynamically as coordinate transforms over the <code class="inline-code">/tf</code> topic. This allows the computer vision and navigation nodes to know the exact 3D position of the camera relative to the chassis wheels.
+    </div>
+  </div>
+
+  <div class="viva-card">
+    <div class="viva-q"><span class="viva-badge">Q1.4</span> Why did you use <code class="inline-code">continuous</code> joints for the drive wheels rather than <code class="inline-code">revolute</code> joints?</div>
+    <div class="viva-concept">Topic Focus: URDF Joint Modeling</div>
+    <div class="viva-ans">
+      <strong>Model Answer:</strong>
+      In URDF, a <code class="inline-code">revolute</code> joint is a rotational joint that has strict physical angle limits (for example, rotating between -90° and +90°, like a robot elbow). A <code class="inline-code">continuous</code> joint has no angle limits and can spin indefinitely without stopping. Because drive wheels must spin continuously to propel the robot forward over long distances, they must be declared as <code class="inline-code">type="continuous"</code>.
+    </div>
+  </div>
+
+  <div class="viva-card">
+    <div class="viva-q"><span class="viva-badge">Q1.5</span> Explain how wheel friction parameters &mu;1 and &mu;2 impact simulation realism.</div>
+    <div class="viva-concept">Topic Focus: Physics & Contact Friction</div>
+    <div class="viva-ans">
+      <strong>Model Answer:</strong>
+      In the ODE physics engine, &mu;1 represents friction along the primary direction of rolling, and &mu;2 represents friction along the perpendicular sideways direction. For the drive wheels, setting &mu;1 = &mu;2 = 1.5 models high-traction rubber on soil, preventing wheel slippage. For the front caster, setting &mu;1 = &mu;2 = 0.001 creates an omnidirectional, nearly frictionless glide pad that eliminates lateral scrubbing resistance during sharp turns.
+    </div>
+  </div>
+</div>
+
+<!-- ==================== PART 2 ==================== -->
+<div class="page-break">
+  <div class="part-header-card border-purple">
+    <div class="part-badge badge-purple">MODULE 2 OF 4</div>
+    <h1 class="part-title">Part 2: Gazebo 3D World, Procedural Forests & Domain Randomization</h1>
+    <p class="part-subtitle">
+      Comprehensive technical handbook covering synthetic ecology simulation in Gazebo Classic 11, SDF 1.6 architecture, procedural woodland generation, distance-based obstacle spacing, multi-tier camouflage concealment scenarios, 3D textured mesh engineering, and solar domain randomization.
+    </p>
+  </div>
+
+  <h2 class="sub-title">2.1 Subsystem Role Distribution & Core Ownership</h2>
+  <table class="custom-table">
+    <thead>
+      <tr>
+        <th style="width: 25%;">Engineering Role</th>
+        <th style="width: 25%;">Primary Subsystem</th>
+        <th style="width: 32%;">Specific Technical Responsibilities</th>
+        <th style="width: 18%;">Core Viva Focus</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong>Procedural Generation Lead</strong></td>
+        <td><strong>Procedural World Generator & Spatial Algorithms</strong></td>
+        <td>
+          &bull; Authoring <code class="inline-code">generate_random_world.py</code>.<br>
+          &bull; Distance-based collision checks to prevent overlapping trees.<br>
+          &bull; 2.0-meter obstacle-free safety zone around robot spawn.<br>
+          &bull; Perimeter barrier wall of alternating oak and pine trees.
+        </td>
+        <td>Distance spacing math, spatial collision checking, procedural logic.</td>
+      </tr>
+      <tr>
+        <td><strong>3D Assets & Shaders Lead</strong></td>
+        <td><strong>3D Models, Textures & Mesh Decoupling</strong></td>
+        <td>
+          &bull; Integrating realistic 3D meshes (deer, leopard, fox, snake, oak, rock).<br>
+          &bull; Writing OGRE <code class="inline-code">.material</code> scripts and MTL texture bindings.<br>
+          &bull; Decoupling visual meshes (<code class="inline-code">&lt;visual&gt;</code>) from collision boxes (<code class="inline-code">&lt;collision&gt;</code>).<br>
+          &bull; Writing <code class="inline-code">model.config</code> and <code class="inline-code">model.sdf</code> wrappers.
+        </td>
+        <td>Visual vs collision meshes, OBJ/DAE/MTL formats, OGRE material passes.</td>
+      </tr>
+      <tr>
+        <td><strong>Performance & Lighting Lead</strong></td>
+        <td><strong>Domain Randomization & CPU Optimization</strong></td>
+        <td>
+          &bull; Solar vector formula (Compass angle 0° to 360°, Elevation 35° to 70°).<br>
+          &bull; Golden-hour diffuse color shifts for realistic illumination variance.<br>
+          &bull; Shadow disabling optimization (<code class="inline-code">&lt;cast_shadows&gt;false&lt;/cast_shadows&gt;</code>).<br>
+          &bull; Seed reproducibility (<code class="inline-code">--seed N</code>) for repeatable academic benchmarks.
+        </td>
+        <td>Domain randomization, Real Time Factor (RTF) optimization, lighting physics.</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h2 class="sub-title">2.2 Gazebo Simulation Engine & SDF 1.6 vs URDF Architecture</h2>
+  <p>
+    Gazebo Classic 11 relies on the <strong>Open Dynamics Engine (ODE)</strong> as its underlying physics solver. While the mobile robot is defined using URDF, the simulated world and all static environment entities (trees, rocks, animals, lighting) are defined using the <strong>Simulation Description Format (SDF 1.6)</strong>:
+  </p>
+  <ul>
+    <li><strong>Why SDF for Worlds?</strong> URDF is strictly limited to tree-structured kinematic mechanisms with a single root link. It cannot represent multiple independent free-floating models, world physics parameters, ambient lighting, directional sun vectors, or global ground planes. SDF natively models entire multi-body environments.</li>
+    <li><strong>The World File (<code class="inline-code">animal_world.world</code>):</strong> Acts as the top-level container, instantiating ODE solver parameters, friction models, sunlight properties, and nested model inclusions using the <code class="inline-code">model://</code> URI schema.</li>
+  </ul>
+
+  <h2 class="sub-title">2.3 Procedural Wildlife World Generator (<code class="inline-code">generate_random_world.py</code>)</h2>
+  <p>
+    A critical limitation of typical student robotics projects is evaluating algorithms in static, manually constructed worlds. If the animal is always placed at the exact same coordinates, the system can easily overfit. The project includes a dedicated procedural generation engine (<code class="inline-code">packages/animal_gazebo/scripts/generate_random_world.py</code>) that synthesizes realistic, organic forest reserves on demand:
+  </p>
+
+  <div class="code-header"><span>Spatial Collision Check Algorithm</span><span>generate_random_world.py</span></div>
+  <div class="code-block">
+def is_valid_position(self, x, y, radius):
+    # 1. Boundary check within arena walls (22m x 22m)
+    if abs(x) > (self.half_size - 1.0) or abs(y) > (self.half_size - 1.0):
+        return False
+
+    # 2. Safety radius: keep 2.0m obstacle-free circle around robot spawn (0, 0)
+    if self.distance((x, y), (0.0, 0.0)) < (self.spawn_clearance_radius + radius):
+        return False
+
+    # 3. Distance check: ensure no overlap with existing placed objects
+    for ox, oy, oradius, _ in self.placed_objects:
+        if self.distance((x, y), (ox, oy)) < (radius + oradius):
+            return False
+
+    return True
+  </div>
+
+  <div class="formula-box">
+    <div class="formula-title">Obstacle Spacing Rule (No Overlapping Objects)</div>
+    <div class="formula-main">
+      Distance Between Objects &ge; Radius of Object 1 + Radius of Object 2
+    </div>
+    <div class="formula-explanation">
+      <strong>What this means in plain words:</strong> Before placing any tree, boulder, or deer into the simulated forest, the code calculates the distance to every already-placed object. If the distance is smaller than the combined size of both objects, the new object is rejected and re-placed elsewhere. It also guarantees a 2.0-meter empty circle around the robot spawn point so the robot never gets stuck inside a tree.
+    </div>
+  </div>
+
+  <h2 class="sub-title">2.4 Multi-Tier Camouflage Concealment Scenarios</h2>
+  <p>
+    The generator places 1 to 4 deer at dynamically sampled coordinates relative to the robot's initial forward-facing optical arc. To rigorously test the computer vision engine, targets are categorized into four distinct concealment tiers:
+  </p>
+
+  <table class="custom-table">
+    <thead>
+      <tr>
+        <th>Concealment Tier</th>
+        <th>Radial Distance</th>
+        <th>Concealment Environment</th>
+        <th>Perception Challenge Evaluated</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong>Tier 1: Close</strong></td>
+        <td>2.8 meters to 4.2 meters</td>
+        <td>Light Concealment; clear line of sight amidst light grass.</td>
+        <td>Baseline detection, rapid visual servoing acquisition.</td>
+      </tr>
+      <tr>
+        <td><strong>Tier 2: Medium</strong></td>
+        <td>4.8 meters to 6.8 meters</td>
+        <td>Moderate Concealment; partially masked behind oak trunks.</td>
+        <td>Partial occlusion robustness, micro-texture extraction.</td>
+      </tr>
+      <tr>
+        <td><strong>Tier 3: Far</strong></td>
+        <td>7.2 meters to 9.5 meters</td>
+        <td>Heavy Camouflage; blending deeply into distant tree clusters.</td>
+        <td>Extreme low-resolution bounding box discovery (box height &lt; 65 pixels).</td>
+      </tr>
+      <tr>
+        <td><strong>Tier 4: Flank</strong></td>
+        <td>5.0 meters to 8.0 meters</td>
+        <td>Deep Shrub & Boulder Cover; situated on lateral flanks.</td>
+        <td>Evaluates S-curve sinusoidal exploration sweep efficacy.</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="callout callout-info">
+    <div class="callout-title">🌲 Strategic Companion Cover Placement</div>
+    In real ecosystems, camouflaged prey animals stand immediately adjacent to trees or boulders to disrupt their physical silhouette. In <code class="inline-code">generate_random_world.py</code>, whenever a deer is placed, the algorithm automatically spawns a <strong>companion natural cover object</strong> (an oak tree, pine tree, or rock boulder) at a randomized distance of 0.6 to 1.2 meters from the deer:
+    <br><code class="inline-code">cx = dx + cover_dist * cos(cover_angle) ; cy = dy + cover_dist * sin(cover_angle)</code>
+    <br>This forces the AI to detect the animal based on micro-texture rather than relying on an isolated silhouette outline against an empty background!
+  </div>
+
+  <h2 class="sub-title">2.5 Solar Lighting Domain Randomization</h2>
+  <p>
+    Lighting in outdoor environments varies by time of day, cloud cover, and solar zenith. The generator applies <strong>photometric domain randomization</strong> by computing a randomized 3D solar direction vector:
+  </p>
+
+  <div class="formula-box">
+    <div class="formula-title">Solar Direction Vector Formula</div>
+    <div class="formula-main">
+      Sun Direction X = &minus;cos(Compass Angle) &times; cos(Elevation Angle)
+      <br>Sun Direction Y = &minus;sin(Compass Angle) &times; cos(Elevation Angle)
+      <br>Sun Direction Z = &minus;sin(Elevation Angle)
+    </div>
+    <div class="formula-details">
+      Where Compass Angle is randomized between 0° and 360° (azimuth), and Sun Elevation is randomized between 35° and 70° above the ground plane.
+    </div>
+    <div class="formula-explanation">
+      <strong>What this means in plain words:</strong> The sunlight angle changes randomly every time a new world is generated. This creates dynamic shadows and realistic lighting (from golden-hour morning sun to bright midday glare), ensuring the AI learns real animal textures rather than memorizing fixed shadow shapes.
+    </div>
+  </div>
+
+  <h2 class="sub-title">2.6 3D Asset Modeling, Materials & Physics Decoupling</h2>
+  <p>
+    The project maintains a realistic library of 3D assets in <code class="inline-code">models/</code>:
+  </p>
+  <ul>
+    <li><strong>Animal Meshes:</strong> <code class="inline-code">deer</code> (high-resolution textured OBJ), <code class="inline-code">leopard</code> (feline mesh scaled by 4.0&times; to 1.36 meters shoulder height with rosette pattern), <code class="inline-code">fox</code>, <code class="inline-code">rabbit</code>, and <code class="inline-code">snake</code> (articulated multi-segment cylinder model).</li>
+    <li><strong>Flora & Terrain Clutter:</strong> <code class="inline-code">oak_tree</code> (OSRF textured bark and branch leaf planes), <code class="inline-code">pine_tree</code> (evergreen coniferous needle textures), and <code class="inline-code">rock</code> (falling rock mesh from Gazebo Fuel with high-roughness diffuse mapping).</li>
+  </ul>
+
+  <div class="code-header"><span>OGRE Material Script Architecture</span><span>models/deer/materials/scripts/deer.material</span></div>
+  <div class="code-block">
+material Animal/Deer
+{
+  technique
+  {
+    pass
+    {
+      ambient 0.90 0.90 0.90 1.0
+      diffuse 1.0 1.0 1.0 1.0
+      specular 0.05 0.05 0.05 1.0 8.0
+
+      texture_unit
+      {
+        texture deer_basecolor.jpg
+      }
+    }
+  }
+}
+  </div>
+
+  <div class="callout callout-warning">
+    <div class="callout-title">⚡ Physics Performance: Visual vs Collision Mesh Decoupling</div>
+    A major breakthrough in our simulation design is the decoupling of visual and collision meshes:
+    <ul>
+      <li><strong>Visual Geometry (<code class="inline-code">&lt;visual&gt;</code>):</strong> Loaded directly from high-polygon 3D OBJ/DAE files with UV-mapped photorealistic textures to ensure visual fidelity for the camera sensor.</li>
+      <li><strong>Collision Geometry (<code class="inline-code">&lt;collision&gt;</code>):</strong> Replaced with simplified geometric bounding boxes (<code class="inline-code">&lt;box size="1.4 0.6 1.4"/&gt;</code>). This slashes contact calculation complexity from heavy multi-triangle calculations down to ultra-fast constant time, preventing simulation freezing when the robot bumps into obstacles!</li>
+    </ul>
+  </div>
+
+  <h2 class="sub-title">2.7 CPU Optimization: Achieving 1.0 Real Time Factor on Intel i5</h2>
+  <p>
+    On consumer laptops lacking dedicated NVIDIA GPUs, running a 3D physics simulator alongside deep neural network inference typically degrades Gazebo's <strong>Real Time Factor (RTF)</strong> to an unplayable 0.25 to 0.40. Two critical optimizations were implemented:
+  </p>
+  <ol>
+    <li><strong>Dynamic Shadow Bypass (<code class="inline-code">&lt;cast_shadows&gt;false&lt;/cast_shadows&gt;</code>):</strong> Disabling directional sunlight shadows in the world file completely removes the expensive multi-pass shadow depth buffer rendering pipeline in OGRE, recovering over 60% of CPU cycles!</li>
+    <li><strong>Static Entity Flagging (<code class="inline-code">&lt;static&gt;true&lt;/static&gt;</code>):</strong> All trees, rocks, and camouflaged animals are flagged as static bodies. ODE completely excludes them from dynamic inertia and velocity integration, treating them as fixed immovable boundaries.</li>
+  </ol>
+
+  <h2 class="sub-title">2.8 Part 2 Dedicated Viva & Oral Exam Defense Guide</h2>
+
+  <div class="viva-card">
+    <div class="viva-q"><span class="viva-badge">Q2.1</span> Why did you use SDF 1.6 for the world instead of defining everything in URDF?</div>
+    <div class="viva-concept">Topic Focus: Simulation Description Format (SDF) Architecture</div>
+    <div class="viva-ans">
+      <strong>Model Answer:</strong>
+      URDF was created strictly to describe the kinematics and dynamics of a single robot mechanism formatted as an acyclic directed tree. URDF has no mechanism to define a global coordinate environment, multiple independent free-floating objects, directional lighting parameters, solar shadows, or ground planes.
+      <br><br>
+      SDF (Simulation Description Format 1.6) is Gazebo's native XML schema designed specifically to represent complete world environments containing dozens of independent models, nested include tags, physics parameters (such as gravity and solver step sizes), and complex OGRE material shading passes.
+    </div>
+  </div>
+
+  <div class="viva-card">
+    <div class="viva-q"><span class="viva-badge">Q2.2</span> How does your procedural placement algorithm guarantee no overlapping trees or animals?</div>
+    <div class="viva-concept">Topic Focus: Procedural Generation & Spatial Collision</div>
+    <div class="viva-ans">
+      <strong>Model Answer:</strong>
+      Our generator maintains a dynamic list of placed objects as tuples of (X, Y, Exclusion Radius, Model Name). For example, a deer has an exclusion radius of 0.9 meters, a tree has 1.0 meter, and a rock has 0.8 meters.
+      <br><br>
+      Before accepting any randomly sampled coordinate, the algorithm computes the straight-line distance to every already-placed object. If the distance is less than the sum of both objects' radii, the candidate position is rejected and re-sampled. Furthermore, it enforces a 2.0-meter empty clearance circle around the origin (0, 0) to prevent spawning obstacles on top of the robot.
+    </div>
+  </div>
+
+  <div class="viva-card">
+    <div class="viva-q"><span class="viva-badge">Q2.3</span> Why did you spawn companion rocks and trees within 0.6m–1.2m of each deer?</div>
+    <div class="viva-concept">Topic Focus: Ecological Camouflage Scenarios</div>
+    <div class="viva-ans">
+      <strong>Model Answer:</strong>
+      In genuine biological ecosystems, animals do not stand in empty open fields; they exploit natural cover (tree trunks, brush, rock outcroppings) so that their body contours merge with the background texture. 
+      <br><br>
+      If an animal is placed in an open clearing, even an untrained neural network can detect it simply by identifying the isolated silhouette outline against grass. Spawning companion cover within 0.6 to 1.2 meters creates visual occlusion, dappled shadow casting, and edge disruption, realistically replicating the ecological conditions of cryptic camouflage.
+    </div>
+  </div>
+
+  <div class="viva-card">
+    <div class="viva-q"><span class="viva-badge">Q2.4</span> Explain how solar domain randomization works and why it is essential for AI evaluation.</div>
+    <div class="viva-concept">Topic Focus: Lighting Physics & Domain Randomization</div>
+    <div class="viva-ans">
+      <strong>Model Answer:</strong>
+      Deep neural networks are notorious for overfitting to specific lighting directions and shadow shapes. If the sun is always fixed at noon, the model memorizes downward-cast shadows rather than true animal features.
+      <br><br>
+      Our procedural generator randomizes the solar vector across an compass angle of 0° to 360° and solar elevation between 35° and 70° above the horizon, while modulating diffuse color channels between 0.75 and 0.95. This exposes the camera to backlighting, direct glare, oblique shadows, and golden-hour warmth, ensuring the perception system generalizes across all daytime outdoor conditions.
+    </div>
+  </div>
+
+  <div class="viva-card">
+    <div class="viva-q"><span class="viva-badge">Q2.5</span> What was the single biggest optimization that allowed Gazebo to run at 1.0 RTF on an Intel i5 CPU?</div>
+    <div class="viva-concept">Topic Focus: CPU Performance & Real Time Factor</div>
+    <div class="viva-ans">
+      <strong>Model Answer:</strong>
+      Disabling dynamic shadows (<code class="inline-code">&lt;cast_shadows&gt;false&lt;/cast_shadows&gt;</code>) in the world SDF light tag. 
+      In software rendering mode, calculating real-time shadow maps for dozens of high-polygon tree canopies and complex meshes requires thousands of CPU shader calculations per frame. Removing shadows reduced CPU rasterization overhead by ~65%, immediately elevating the Real Time Factor from an unstable 0.35 up to a smooth, synchronized 1.0.
+    </div>
+  </div>
+</div>
+
+<!-- ==================== PART 3 ==================== -->
+<div class="page-break">
+  <div class="part-header-card border-amber">
+    <div class="part-badge badge-amber">MODULE 3 OF 4</div>
+    <h1 class="part-title">Part 3: CIELAB CLAHE Micro-Contrast & YOLOv8 Camouflage Perception</h1>
+    <p class="part-subtitle">
+      Comprehensive technical handbook covering the computer vision perception engine, theory of biological crypsis, CIELAB color space transformation, adaptive histogram equalization (CLAHE), YOLOv8 neural network architecture, ungulate taxonomic semantic prior mapping, and monocular pinhole distance estimation.
+    </p>
+  </div>
+
+  <h2 class="sub-title">3.1 Subsystem Role Distribution & Core Ownership</h2>
+  <table class="custom-table">
+    <thead>
+      <tr>
+        <th style="width: 25%;">Engineering Role</th>
+        <th style="width: 25%;">Primary Subsystem</th>
+        <th style="width: 32%;">Specific Technical Responsibilities</th>
+        <th style="width: 18%;">Core Viva Focus</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong>Camouflage Theory & CLAHE Lead</strong></td>
+        <td><strong>Color Spaces & Micro-Texture Preprocessing</strong></td>
+        <td>
+          &bull; Formulating the difference between COD and generic object detection.<br>
+          &bull; Converting raw frames from BGR to CIELAB color space.<br>
+          &bull; Applying CLAHE exclusively on Luminance channel (L*).<br>
+          &bull; Tuning the 4&times;4 tile grid and 3.0 clip limit parameters.
+        </td>
+        <td>COD vs Generic OD, color space physics, CLAHE mathematics, clip limit purpose.</td>
+      </tr>
+      <tr>
+        <td><strong>Deep Learning Architecture Lead</strong></td>
+        <td><strong>YOLOv8 Neural Network & Inference</strong></td>
+        <td>
+          &bull; Ingesting PyTorch YOLOv8n deep model inside ROS 2 node.<br>
+          &bull; Understanding C2f multi-path gradient modules and PAN-Net neck.<br>
+          &bull; Decoupled anchor-free detection head and loss mechanics.<br>
+          &bull; Implementing CPU inference throttling (<code class="inline-code">frame_skip = 1</code>).
+        </td>
+        <td>YOLOv8 vs YOLOv5, C2f modules, anchor-free heads, DFL/CIoU loss functions.</td>
+      </tr>
+      <tr>
+        <td><strong>Taxonomic Mapping & Depth Lead</strong></td>
+        <td><strong>Taxonomic Priors, Depth Math & HUD</strong></td>
+        <td>
+          &bull; Resolving the COCO Vocabulary Gap via Ungulate Prior Mapping.<br>
+          &bull; Filtering false-positive foliage noise (confidence threshold 0.65).<br>
+          &bull; Formulating monocular pinhole distance estimation formula.<br>
+          &bull; Temporal box smoothing and tactical OpenCV HUD overlay.
+        </td>
+        <td>Pinhole distance math, similar triangles, taxonomic mapping, box smoothing.</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h2 class="sub-title">3.2 The Biological Camouflage Detection Challenge</h2>
+  <p>
+    In terrestrial ecosystems, animals have evolved four primary visual concealment strategies:
+  </p>
+  <ul>
+    <li><strong>Background Matching:</strong> The animal's coat color, texture, and luminance match the background substrate almost identically (e.g., deer fur against dried oak bark). The color difference between animal and background is minimal, making simple color thresholding impossible.</li>
+    <li><strong>Disruptive Coloration:</strong> High-contrast patterns (such as leopard rosettes or snake bands) create visual false edges that break up the animal's continuous body outline.</li>
+    <li><strong>Counter-Shading:</strong> Darker pigmentation on the upper surface and lighter pigmentation on the underside counteracts the natural shadow cast by sunlight, rendering the animal visually flat.</li>
+    <li><strong>Shadow & Foliage Blending:</strong> Animals position themselves under tree canopies where dappled sunlight casts chaotic shadows that mimic body contours.</li>
+  </ul>
+
+  <p>
+    Standard convolutional neural networks rely heavily on <em>sharp edge borders</em> and <em>distinct color contrast</em>. When applied to camouflaged animals, standard models fail, generating confidence scores well below default detection thresholds (below 20%). The perception pipeline resolves this challenge through an integrated multi-stage approach.
+  </p>
+
+  <h2 class="sub-title">3.3 CIELAB Contrast Limited Adaptive Histogram Equalization (CLAHE)</h2>
+  <p>
+    Applying standard histogram equalization directly to an RGB image alters the relative balance between Red, Green, and Blue channels, producing extreme color distortion, unnatural saturation, and severe noise amplification.
+  </p>
+  <p>
+    To overcome this, the perception node (<code class="inline-code">ros_recognition_yolo.py</code>) converts the incoming video frame into the <strong>CIELAB (L*a*b*) color space</strong>:
+  </p>
+  <ul>
+    <li><strong>L* Channel (Luminance):</strong> Represents perceived human lightness (from 0 = complete black to 100 = pure white).</li>
+    <li><strong>a* Channel (Green to Red):</strong> Represents color along the green-red axis.</li>
+    <li><strong>b* Channel (Blue to Yellow):</strong> Represents color along the blue-yellow axis.</li>
+  </ul>
+
+  <p>
+    By isolating the <strong>L* channel</strong>, our filter modifies local contrast without touching color information (a*, b*).
+  </p>
+
+  <div class="code-header"><span>CIELAB CLAHE Preprocessing Function</span><span>ros_recognition_yolo.py</span></div>
+  <div class="code-block">
+def preprocess_for_camouflage(self, cv_image):
+    if not self.enable_clahe:
+        return cv_image
+
+    # 1. Convert BGR image to CIELAB space
+    lab = cv2.cvtColor(cv_image, cv2.COLOR_BGR2LAB)
+    l_chan, a_chan, b_chan = cv2.split(lab)
+
+    # 2. Apply CLAHE strictly to the L (Luminance) channel
+    enhanced_l = self.clahe.apply(l_chan)
+
+    # 3. Re-merge channels and convert back to BGR
+    enhanced_lab = cv2.merge((enhanced_l, a_chan, b_chan))
+    return cv2.cvtColor(enhanced_lab, cv2.COLOR_LAB2BGR)
+  </div>
+
+  <div class="two-col avoid-break">
+    <div class="card-box">
+      <h4>Clip Limit (3.0): Preventing Noise Amplification</h4>
+      <p>
+        In basic adaptive equalization, if an image region is flat and uniform (such as smooth grass), noise is heavily amplified. The <strong>clip limit (3.0)</strong> sets a ceiling on histogram peaks. Excess pixels above the threshold are clipped and distributed uniformly across all bins, enhancing fur micro-textures without amplifying background noise.
+      </p>
+    </div>
+    <div class="card-box">
+      <h4>Contextual Tile Grid (4 &times; 4)</h4>
+      <p>
+        The 640&times;480 frame is divided into a 4&times;4 grid of 16 contextual tiles (160&times;120 pixels each). This spatial scale perfectly matches the physical visual footprint of animal fur patterns against tree trunks. Smooth blending between tiles eliminates visible borders.
+      </p>
+    </div>
+  </div>
+
+  <h2 class="sub-title">3.4 Ultralytics YOLOv8 Deep Learning Architecture</h2>
+  <p>
+    The system deploys <strong>YOLOv8n (Nano)</strong>, which incorporates modern deep learning computer vision advances:
+  </p>
+  <ul>
+    <li><strong>Backbone:</strong> Modified CSPDarknet53 utilizing <strong>C2f modules</strong> (Cross-Stage Partial with two convolutions). C2f incorporates multi-branch split connections, preserving gradient flow across deep layers. This enables the network to retain faint micro-texture representations that earlier architectures discarded.</li>
+    <li><strong>Neck:</strong> Path Aggregation Network (PAN-Net) coupled with a Feature Pyramid Network (FPN). High-resolution spatial feature maps from early layers are combined with deep semantic feature maps, enabling multi-scale detection across varying animal distances.</li>
+    <li><strong>Anchor-Free Decoupled Head:</strong> In older models (YOLOv3, YOLOv5), classification and bounding box regression shared common layers and relied on pre-defined anchor boxes. YOLOv8 decouples these tasks into independent branches and regresses box centers directly, dramatically improving detection of non-standard animal poses.</li>
+    <li><strong>Loss Formulations:</strong> Bounding box regression utilizes a combination of <strong>Complete IoU (CIoU) Loss</strong> (accounting for overlap, aspect ratio, and center distance) and <strong>Distribution Focal Loss (DFL)</strong> (which models box boundaries as continuous probability distributions to handle blurred edges). Classification is trained via <strong>Binary Cross-Entropy (BCE)</strong>.</li>
+  </ul>
+
+  <h2 class="sub-title">3.5 Ungulate Taxonomic Semantic Prior Mapping</h2>
+  <p>
+    A critical technical obstacle is the <strong>Vocabulary Gap</strong> of pre-trained models: the Microsoft COCO dataset (80 categories) contains <code class="inline-code">horse</code>, <code class="inline-code">sheep</code>, <code class="inline-code">cow</code>, <code class="inline-code">zebra</code>, and <code class="inline-code">giraffe</code>, but <strong>has no 'deer' class!</strong>
+  </p>
+  <p>
+    When exposed to a camouflaged deer in Gazebo, a standard neural network detects universal quadruped morphological features (horizontal torso, four legs, elongated neck) and fires moderate activations for related ungulate categories (0.22 to 0.55 confidence). 
+    The perception node exploits this biological relationship through an intelligent <strong>taxonomic semantic mapping layer</strong>:
+  </p>
+
+  <div class="code-header"><span>Taxonomic Semantic Mapping & Noise Gating</span><span>ros_recognition_yolo.py</span></div>
+  <div class="code-block">
+# Ungulate Quadruped Prior Classes in COCO
+self.ungulate_coco_classes = {'horse', 'giraffe', 'cow', 'sheep', 'zebra', 'bear', 'deer', 'dog', 'elephant', 'cat'}
+self.noise_coco_classes = {'bird', 'potted plant', 'kite', 'bench', 'chair', 'umbrella'}
+
+# Filter out false-positive foliage noise on tree branches
+if cls_name in self.noise_coco_classes and conf < 0.65:
+    continue
+
+# Taxonomic Ungulate Prior Mapping:
+is_wildlife_target = (cls_name in self.ungulate_coco_classes) or (cls_name == self.target_animal)
+label_name = "DEER" if is_wildlife_target else cls_name.upper()
+  </div>
+
+  <h2 class="sub-title">3.6 Monocular Depth Estimation Formulations</h2>
+  <p>
+    Our system eliminates the need for expensive, power-hungry LiDAR sensors by deriving distance mathematically from a <strong>single 2D camera bounding box</strong> using the pinhole perspective model:
+  </p>
+
+  <!-- Formula 1: Focal Length -->
+  <div class="formula-box">
+    <div class="formula-title">Step 1: Compute Camera Focal Length in Pixels (f)</div>
+    <div class="formula-main">
+      Focal Length (f) = (Image Sensor Width / 2) &divide; tan(Horizontal Field of View / 2)
+    </div>
+    <div class="formula-details">
+      With Image Width = 640 pixels and Field of View = 80° (40° half-angle):
+      <br><strong>f = 320 &divide; tan(40°) = 320 &divide; 0.8391 = 381.5 pixels</strong>
+    </div>
+    <div class="formula-explanation">
+      <strong>What this means in plain words:</strong> This converts the camera's physical 80-degree optical viewing angle into equivalent pixel coordinates, which is required to calculate real-world distances from 2D photos.
+    </div>
+  </div>
+
+  <!-- Formula 2: Depth Distance -->
+  <div class="formula-box">
+    <div class="formula-title">Step 2: Target Distance Estimation Formula (Depth D)</div>
+    <div class="formula-main">
+      Estimated Distance (D) = (Focal Length &times; Real Animal Height) &divide; Bounding Box Height in Pixels
+    </div>
+    <div class="formula-details">
+      Using our camera focal length (381.5 px) and standing deer height (1.35 meters):
+      <br><strong>Distance (D) = (381.5 &times; 1.35) &divide; Box Height = 515.025 &divide; Box Height (meters)</strong>
+    </div>
+    <div class="formula-explanation">
+      <strong>What this means in plain words:</strong> Things that are farther away appear smaller on screen. Since we know a real adult deer is approximately 1.35 meters tall, we simply count how many pixels tall its bounding box is. 
+      <br>&bull; If the box is <strong>172 pixels tall</strong> &rarr; Distance = 515.025 / 172 = <strong>3.0 meters away</strong> (Optimal inspection standoff).
+      <br>&bull; If the box is <strong>103 pixels tall</strong> &rarr; Distance = 515.025 / 103 = <strong>5.0 meters away</strong>.
+      <br>&bull; If the box is <strong>52 pixels tall</strong> &rarr; Distance = 515.025 / 52 = <strong>9.9 meters away</strong>.
+    </div>
+  </div>
+
+  <div class="callout callout-info">
+    <div class="callout-title">💡 Why Vertical Height is Invariant to Animal Heading</div>
+    When an animal turns from a side profile view to a head-on view, its bounding box <em>width</em> changes drastically by over 300%. In contrast, its vertical <em>standing height</em> remains virtually unchanged regardless of which way the animal faces. Using vertical pixel height guarantees reliable, orientation-independent distance estimates!
+  </div>
+
+  <h2 class="sub-title">3.7 Temporal Bounding Box Smoothing & Tactical HUD</h2>
+  <p>
+    To eliminate frame-to-frame bounding box coordinate jitter, the node applies an <strong>Exponential Moving Average (EMA)</strong> smoother:
+  </p>
+
+  <div class="formula-box">
+    <div class="formula-title">Smooth Bounding Box Formula (Exponential Moving Average)</div>
+    <div class="formula-main">
+      Smoothed Box Coordinate = 0.65 &times; (New Frame Box) + 0.35 &times; (Previous Frame Box)
+    </div>
+    <div class="formula-explanation">
+      <strong>What this means in plain words:</strong> Bounding boxes detected by neural networks can flicker or jump slightly from frame to frame due to video noise. By blending 65% of the new box with 35% of the previous box, the box glides smoothly on screen without jitter.
+    </div>
+  </div>
+
+  <p>
+    The node renders a tactical Heads-Up Display (HUD) directly on the annotated video stream:
+  </p>
+  <ul>
+    <li><strong>Tactical Corner Brackets:</strong> High-visibility green brackets drawn at bounding box corners.</li>
+    <li><strong>Target Distance Banners:</strong> Displays <code class="inline-code">🦌 DEER 74.2% | 3.8m</code>.</li>
+    <li><strong>Center Crosshair & Performance Overlay:</strong> Center targeting marker, real-time FPS counter, and neural inference latency in milliseconds.</li>
+  </ul>
+
+  <h2 class="sub-title">3.8 Part 3 Dedicated Viva & Oral Exam Defense Guide</h2>
+
+  <div class="viva-card">
+    <div class="viva-q"><span class="viva-badge">Q3.1</span> Why did you apply CLAHE strictly on the L* channel of CIELAB instead of RGB?</div>
+    <div class="viva-concept">Topic Focus: CIELAB Color Space & Contrast Enhancement</div>
+    <div class="viva-ans">
+      <strong>Model Answer:</strong>
+      In the RGB color space, luminance and chromaticity are deeply coupled across all three channels. Equalizing RGB channels independently distorts the color balance, shifts the natural hue of vegetation, and produces extreme pixel saturation.
+      <br><br>
+      In <strong>CIELAB (L*a*b*)</strong>, lightness (L*, perceived human luminance) is cleanly decoupled from color information (a*, green-red; b*, blue-yellow). Applying CLAHE exclusively to the L* channel sharpens the subtle micro-textures of animal fur and muscle contours against tree bark without introducing any chromatic distortion or artificial color shifts.
+    </div>
+  </div>
+
+  <div class="viva-card">
+    <div class="viva-q"><span class="viva-badge">Q3.2</span> What is the mathematical purpose of the clip limit in CLAHE?</div>
+    <div class="viva-concept">Topic Focus: Contrast Limited Adaptive Equalization</div>
+    <div class="viva-ans">
+      <strong>Model Answer:</strong>
+      Standard Adaptive Histogram Equalization (AHE) tends to over-amplify noise in homogeneous, uniform image regions (such as flat terrain or overcast sky). The <strong>clip limit (3.0)</strong> sets an upper boundary. The pixel count exceeding the clip threshold is clipped and redistributed uniformly across all histogram bins before computing the Cumulative Distribution Function (CDF). This guarantees contrast enhancement without amplifying background sensor noise.
+    </div>
+  </div>
+
+  <div class="viva-card">
+    <div class="viva-q"><span class="viva-badge">Q3.3</span> How does YOLOv8's C2f module differ from YOLOv5's C3 module?</div>
+    <div class="viva-concept">Topic Focus: Deep Learning Backbone Architecture</div>
+    <div class="viva-ans">
+      <strong>Model Answer:</strong>
+      YOLOv5 used the C3 (Cross-Stage Partial with 3 Convolutions) block, which passed feature maps through standard bottleneck layers sequentially. 
+      <br><br>
+      YOLOv8 introduces the <strong>C2f module</strong>, inspired by ELAN (Efficient Layer Aggregation Network). C2f splits the input feature map and passes it through multiple parallel bottleneck branches, concatenating intermediate outputs at every stage. This preserves rich, multi-path gradient flow during backpropagation and retains faint, multi-scale texture details that are critical for recognizing camouflaged animals.
+    </div>
+  </div>
+
+  <div class="viva-card">
+    <div class="viva-q"><span class="viva-badge">Q3.4</span> Explain how you solved the problem of COCO having no 'deer' class.</div>
+    <div class="viva-concept">Topic Focus: Taxonomic Semantic Prior Mapping</div>
+    <div class="viva-ans">
+      <strong>Model Answer:</strong>
+      The MS COCO dataset (80 categories) does not contain a 'deer' class. When an un-fine-tuned YOLO network sees a deer, its convolutional layers detect the quadruped morphology (four legs, torso, elongated neck) and fire activations for related ungulate classes: <code class="inline-code">horse</code>, <code class="inline-code">sheep</code>, <code class="inline-code">cow</code>, <code class="inline-code">zebra</code>, or <code class="inline-code">giraffe</code> at confidence scores between 0.22 and 0.55.
+      <br><br>
+      Our perception node captures these quadruped priors and maps them systematically to the target wildlife class:
+      <br><code class="inline-code">is_target = (cls_name in ungulate_coco_classes) or (cls_name == 'deer')</code>
+      <br>This allows instant, reliable camouflage deer detection before initiating fine-tuning!
+    </div>
+  </div>
+
+  <div class="viva-card">
+    <div class="viva-q"><span class="viva-badge">Q3.5</span> Derive the monocular depth estimation equation from first principles.</div>
+    <div class="viva-concept">Topic Focus: Monocular Depth & Pinhole Optics</div>
+    <div class="viva-ans">
+      <strong>Model Answer:</strong>
+      From pinhole camera geometry:
+      <ol>
+        <li>Given horizontal FOV (80°) and sensor width (640 pixels):
+          <br>Focal Length = (640 / 2) / tan(40°) = 320 / 0.8391 = 381.5 pixels.
+        </li>
+        <li>By similar triangles, the ratio of apparent bounding box height to focal length equals the ratio of real physical height (1.35 meters) to real-world distance D:
+          <br>Box Height / Focal Length = Real Height / Distance
+          <br>Distance = (Focal Length &times; Real Height) / Box Height = (381.5 &times; 1.35) / Box Height = 515.025 / Box Height.
+        </li>
+      </ol>
+      This enables passive, real-time depth calculation without needing an active LiDAR sensor.
+    </div>
+  </div>
+</div>
+
+<!-- ==================== PART 4 ==================== -->
+<div class="page-break">
+  <div class="part-header-card border-blue">
+    <div class="part-badge badge-blue">MODULE 4 OF 4</div>
+    <h1 class="part-title">Part 4: Autonomous Navigation, Visual Servoing, AI Training & DevOps</h1>
+    <p class="part-subtitle">
+      Comprehensive technical handbook covering the 4-state autonomous patrol Finite State Machine (FSM), proportional visual servoing control laws, synthetic dataset capture, YOLOv8 training hyperparameters, multi-layer Docker containerization, X11 GUI forwarding, and cross-subsystem integration defense.
+    </p>
+  </div>
+
+  <h2 class="sub-title">4.1 Subsystem Role Distribution & Core Ownership</h2>
+  <table class="custom-table">
+    <thead>
+      <tr>
+        <th style="width: 25%;">Engineering Role</th>
+        <th style="width: 25%;">Primary Subsystem</th>
+        <th style="width: 32%;">Specific Technical Responsibilities</th>
+        <th style="width: 18%;">Core Viva Focus</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong>Autonomous State Machine Lead</strong></td>
+        <td><strong>Behavioral Robotics & Patrol Sequencing</strong></td>
+        <td>
+          &bull; Authoring <code class="inline-code">autonomous_patrol.py</code> state transition engine.<br>
+          &bull; Implementing 360° rotational sweep (<code class="inline-code">SCAN_SWEEP</code>).<br>
+          &bull; Formulating sinusoidal FOV expansion weave (<code class="inline-code">EXPLORE_CREEP</code>).<br>
+          &bull; 5.0-second target inspection hold and sector exit bounce.
+        </td>
+        <td>FSM state transitions, S-curve weave mathematics, timeout overrides.</td>
+      </tr>
+      <tr>
+        <td><strong>Visual Servoing & Control Lead</strong></td>
+        <td><strong>Closed-Loop Image-Based Steering</strong></td>
+        <td>
+          &bull; Formulating proportional image-based steering law (Kp = 0.0028).<br>
+          &bull; Calculating horizontal tracking error (Center X difference).<br>
+          &bull; Enforcing standoff distance holding (3.0m) via depth telemetry.<br>
+          &bull; Velocity saturation limits (yaw speed capped at 0.45 rad/s).
+        </td>
+        <td>Visual servoing P-control law, closed-loop stability, standoff holding.</td>
+      </tr>
+      <tr>
+        <td><strong>AI Training & Datasets Lead</strong></td>
+        <td><strong>Synthetic Datasets & YOLOv8 Fine-Tuning</strong></td>
+        <td>
+          &bull; Authoring synthetic frame capture node (<code class="inline-code">capture_dataset.py</code>).<br>
+          &bull; Organizing YOLO dataset standard (<code class="inline-code">data.yaml</code>, normalized labels).<br>
+          &bull; Camouflage data augmentations (HSV jitter, mosaic, mixup).<br>
+          &bull; Authoring fine-tuning training script (<code class="inline-code">train_camouflage_yolo.py</code>).
+        </td>
+        <td>Data augmentation strategies for camouflage, loss functions, mAP metrics.</td>
+      </tr>
+      <tr>
+        <td><strong>DevOps & Systems Integration Lead</strong></td>
+        <td><strong>Docker Containers, X11 & Colcon Builds</strong></td>
+        <td>
+          &bull; Architecting multi-layer <code class="inline-code">Dockerfile</code> (Ubuntu 22.04 + ROS 2 + PyTorch).<br>
+          &bull; Configuring host X11 display forwarding in <code class="inline-code">start_docker.sh</code>.<br>
+          &bull; Implementing software rendering flags (<code class="inline-code">LIBGL_ALWAYS_SOFTWARE=1</code>).<br>
+          &bull; Managing colcon workspace build systems and symlink sourcing.
+        </td>
+        <td>Docker architecture, X11 UNIX socket bridging, software GL rendering.</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h2 class="sub-title">4.2 Autonomous 4-State Finite State Machine (FSM)</h2>
+  <p>
+    The robot's autonomous exploration and target inspection logic is governed by a deterministic <strong>Finite State Machine (FSM)</strong> implemented in <code class="inline-code">packages/animal_control/scripts/autonomous_patrol.py</code>, executing at 10 Hz:
+  </p>
+
+  <!-- SVG State Machine Flowchart -->
+  <div class="diagram-container avoid-break">
+    <svg width="100%" height="230" viewBox="0 0 760 230" xmlns="http://www.w3.org/2000/svg">
+      <!-- State 1: SCAN_SWEEP -->
+      <rect x="20" y="30" width="150" height="70" rx="8" fill="#ecfdf5" stroke="#10b981" stroke-width="2"/>
+      <text x="95" y="55" font-family="'Plus Jakarta Sans', sans-serif" font-size="9" font-weight="700" fill="#065f46" text-anchor="middle">1. SCAN_SWEEP</text>
+      <text x="95" y="70" font-family="'JetBrains Mono', monospace" font-size="7.5" fill="#047857" text-anchor="middle">w = 0.32 rad/s</text>
+      <text x="95" y="84" font-family="'Plus Jakarta Sans', sans-serif" font-size="7" fill="#64748b" text-anchor="middle">In-place 360° Sweep (19.6s)</text>
+
+      <!-- Arrow 1 to 2 -->
+      <path d="M 170 65 L 230 65" fill="none" stroke="#64748b" stroke-width="1.8" marker-end="url(#arrow-fsm2)" />
+      <text x="200" y="58" font-family="'Plus Jakarta Sans', sans-serif" font-size="6.5" fill="#64748b" text-anchor="middle">360° Done</text>
+
+      <!-- State 2: EXPLORE_CREEP -->
+      <rect x="235" y="30" width="165" height="70" rx="8" fill="#f0f9ff" stroke="#0284c7" stroke-width="2"/>
+      <text x="317" y="55" font-family="'Plus Jakarta Sans', sans-serif" font-size="9" font-weight="700" fill="#0369a1" text-anchor="middle">2. EXPLORE_CREEP</text>
+      <text x="317" y="70" font-family="'JetBrains Mono', monospace" font-size="7.5" fill="#0284c7" text-anchor="middle">v=0.22, w=0.14*sin(1.5t)</text>
+      <text x="317" y="84" font-family="'Plus Jakarta Sans', sans-serif" font-size="7" fill="#64748b" text-anchor="middle">S-Curve Weave FOV Expansion</text>
+
+      <!-- Arrow 2 to 1 (Timeout loop) -->
+      <path d="M 317 30 C 317 10, 95 10, 95 30" fill="none" stroke="#64748b" stroke-width="1.5" stroke-dasharray="3,3" marker-end="url(#arrow-fsm2)" />
+      <text x="206" y="16" font-family="'Plus Jakarta Sans', sans-serif" font-size="6.5" fill="#64748b" text-anchor="middle">After 9.0s Creep ➔ New Scan</text>
+
+      <!-- Target Spotted Interrupt Arrow to State 3 -->
+      <path d="M 317 100 L 317 130 L 515 130" fill="none" stroke="#059669" stroke-width="2" marker-end="url(#arrow-fsm-green2)" />
+      <path d="M 95 100 L 95 130 L 515 130" fill="none" stroke="#059669" stroke-width="2" />
+      <text x="310" y="124" font-family="'Plus Jakarta Sans', sans-serif" font-size="7" font-weight="700" fill="#047857" text-anchor="middle">TARGET SPOTTED! (Interrupt)</text>
+
+      <!-- State 3: TRACK_TARGET -->
+      <rect x="520" y="85" width="220" height="90" rx="8" fill="#fefce8" stroke="#ca8a04" stroke-width="2"/>
+      <text x="630" y="108" font-family="'Plus Jakarta Sans', sans-serif" font-size="9" font-weight="700" fill="#854d0e" text-anchor="middle">3. TRACK_TARGET (Servoing)</text>
+      <text x="630" y="123" font-family="'JetBrains Mono', monospace" font-size="7.5" fill="#a16207" text-anchor="middle">w = kp*(320 - cx) | Approach</text>
+      <text x="630" y="138" font-family="'JetBrains Mono', monospace" font-size="7.5" fill="#a16207" text-anchor="middle">If Dist &lt;= 3.0m ➔ Halt (v=0)</text>
+      <text x="630" y="153" font-family="'Plus Jakarta Sans', sans-serif" font-size="7" fill="#713f12" text-anchor="middle">Hold Scientific Inspection for 5.0s</text>
+
+      <!-- Arrow 3 to 4 -->
+      <path d="M 630 175 L 630 205 L 430 205" fill="none" stroke="#9333ea" stroke-width="2" marker-end="url(#arrow-fsm-purple2)" />
+      <text x="530" y="200" font-family="'Plus Jakarta Sans', sans-serif" font-size="7" fill="#7e22ce" text-anchor="middle">Inspection Complete (5.0s)</text>
+
+      <!-- State 4: TURN_BOUNCE -->
+      <rect x="250" y="170" width="175" height="55" rx="8" fill="#faf5ff" stroke="#9333ea" stroke-width="2"/>
+      <text x="337" y="192" font-family="'Plus Jakarta Sans', sans-serif" font-size="9" font-weight="700" fill="#6b21a8" text-anchor="middle">4. TURN_BOUNCE</text>
+      <text x="337" y="206" font-family="'JetBrains Mono', monospace" font-size="7.5" fill="#7e22ce" text-anchor="middle">w = 0.40 rad/s (for 3.5s)</text>
+      <text x="337" y="218" font-family="'Plus Jakarta Sans', sans-serif" font-size="6.5" fill="#64748b" text-anchor="middle">Turns ~110° to explore new sector</text>
+
+      <!-- Arrow 4 back to 2 -->
+      <path d="M 250 197 L 195 197 L 195 75 L 235 75" fill="none" stroke="#64748b" stroke-width="1.8" marker-end="url(#arrow-fsm2)" />
+      <text x="175" y="140" font-family="'Plus Jakarta Sans', sans-serif" font-size="6.5" fill="#64748b" text-anchor="middle" transform="rotate(-90 175 140)">Advance Sector</text>
+
+      <defs>
+        <marker id="arrow-fsm2" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
+          <path d="M 0 1 L 10 5 L 0 9 z" fill="#64748b" />
+        </marker>
+        <marker id="arrow-fsm-green2" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
+          <path d="M 0 1 L 10 5 L 0 9 z" fill="#059669" />
+        </marker>
+        <marker id="arrow-fsm-purple2" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
+          <path d="M 0 1 L 10 5 L 0 9 z" fill="#9333ea" />
+        </marker>
+      </defs>
+    </svg>
+    <div class="diagram-caption">Figure 4.1: Autonomous Camouflage Search & Visual Servoing State Transition Diagram</div>
+  </div>
+
+  <h2 class="sub-title">4.3 Proportional Visual Servoing Control Law</h2>
+  <p>
+    When a camouflaged animal is acquired, the controller switches instantly to <code class="inline-code">STATE_TRACK_TARGET</code>. It calculates the horizontal pixel error between the image center and the animal's bounding box center:
+  </p>
+
+  <div class="formula-box">
+    <div class="formula-title">Proportional Visual Servoing Steering Formula</div>
+    <div class="formula-main">
+      Steering Turn Speed (&omega;<sub>z</sub>) = Sensitivity Gain (K<sub>p</sub>) &times; (Image Center X &minus; Detected Target Center X)
+    </div>
+    <div class="formula-details">
+      With Image Center = 320 pixels (half of 640 px) and Sensitivity Gain K<sub>p</sub> = 0.0028:
+      <br><strong>Steering Speed (&omega;<sub>z</sub>) = 0.0028 &times; (320 &minus; Animal Center X) rad/s</strong>
+      <br><em>(Output is safely capped between &minus;0.45 and +0.45 rad/s to prevent aggressive skidding)</em>
+    </div>
+    <div class="formula-explanation">
+      <strong>What this means in plain words:</strong>
+      <br>&bull; If the deer is spotted on the <strong>right side of the screen</strong> (e.g. at pixel 420):
+      <br>Error = 320 &minus; 420 = &minus;100 pixels &rarr; Turn Speed = 0.0028 &times; (&minus;100) = <strong>&minus;0.28 rad/s</strong> (the robot smoothly turns right to center the deer).
+      <br>&bull; If the deer is spotted on the <strong>left side</strong> (e.g. at pixel 220):
+      <br>Error = 320 &minus; 220 = +100 pixels &rarr; Turn Speed = 0.0028 &times; (+100) = <strong>+0.28 rad/s</strong> (the robot turns left to center the deer).
+      <br>&bull; When the deer is <strong>dead-center at pixel 320</strong>:
+      <br>Error = 0 pixels &rarr; Turn Speed = 0 rad/s (the robot drives straight forward directly toward the animal).
+    </div>
+  </div>
+
+  <div class="code-header"><span>Visual Servoing & Standoff Logic</span><span>autonomous_patrol.py</span></div>
+  <div class="code-block">
+cx = self.primary_target['center_x']
+dist = self.primary_target['distance_m']
+error_x = self.image_center_x - cx
+
+# Proportional steering to center target in FOV
+angular_z = float(self.kp_steer * error_x)
+angular_z = max(min(angular_z, 0.45), -0.45)
+
+# Standoff Inspection Logic
+if dist > self.stop_distance:
+    linear_x = self.forward_speed * 0.7  # Cautious approach (0.154 m/s)
+    self.inspection_start_time = None
+    self.publish_cmd(linear_x, angular_z)
+else:
+    # Target in optimal range - halt and inspect
+    linear_x = 0.0
+    angular_z = float(self.kp_steer * error_x * 0.5)  # Fine centering only
+    self.publish_cmd(linear_x, angular_z)
+
+    if self.inspection_start_time is None:
+        self.inspection_start_time = now
+        self.inspected_targets_count += 1
+        self.get_logger().info(f'TARGET ACQUIRED: Holding inspection at {dist:.1f}m')
+
+    # Hold inspection for 5 seconds, then resume search
+    if (now - self.inspection_start_time) > 5.0:
+        self.state = self.STATE_TURN_BOUNCE
+        self.state_start_time = now
+  </div>
+
+  <div class="formula-box">
+    <div class="formula-title">Sinusoidal Field-of-View Expansion Weave Formula</div>
+    <div class="formula-main">
+      Weaving Turn Speed (&omega;) = 0.14 &times; sin(1.5 &times; Elapsed Time) rad/s
+    </div>
+    <div class="formula-explanation">
+      <strong>What this means in plain words:</strong> While driving forward at 0.22 m/s, the robot gently wiggles its heading from side to side in an S-curve wave. Because the camera is fixed to the robot chassis, this weaving motion widens the camera's effective field of view from 80 degrees to over 115 degrees across the forest floor, discovering animals hidden off to the sides!
+    </div>
+  </div>
+
+  <h2 class="sub-title">4.4 Synthetic Dataset Generation & Training Pipeline</h2>
+  <p>
+    Training neural networks for cryptic camouflage requires specialized datasets. The project implements an automated dataset collector (<code class="inline-code">training/capture_dataset.py</code>) that records camera frames from the Gazebo simulation:
+  </p>
+  <div class="code-block">
+ros2 run animal_recognition capture_dataset.py --ros-args -p auto_interval_sec:=0.5
+  </div>
+
+  <h3 class="sub-sub-title">Data Augmentation Hyperparameters for Camouflage Feature Learning</h3>
+  <p>
+    Standard data augmentations can inadvertently destroy subtle camouflage boundaries. In <code class="inline-code">training/train_camouflage_yolo.py</code>, hyperparameters are specifically tuned:
+  </p>
+  <table class="custom-table">
+    <thead>
+      <tr>
+        <th>Hyperparameter</th>
+        <th>Setting</th>
+        <th>Engineering Justification for Camouflage</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><code class="inline-code">hsv_h / hsv_s / hsv_v</code></td>
+        <td>0.015 / 0.7 / 0.4</td>
+        <td>Controlled color jitter; forces the network to learn fur texture patterns rather than memorizing exact RGB hue values.</td>
+      </tr>
+      <tr>
+        <td><code class="inline-code">mosaic</code></td>
+        <td>1.0</td>
+        <td>Stitches 4 training images into one composite; forces multi-scale invariance and simulates heavy partial occlusion.</td>
+      </tr>
+      <tr>
+        <td><code class="inline-code">mixup</code></td>
+        <td>0.1</td>
+        <td>Alpha-blends two training images; trains the model to discern faint target edges through transparent foliage.</td>
+      </tr>
+      <tr>
+        <td><code class="inline-code">scale</code></td>
+        <td>0.5</td>
+        <td>Scales object size between 50% and 150%, ensuring robust detection across all 4 distance tiers.</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h2 class="sub-title">4.5 Docker Containerization & System Administration</h2>
+  <p>
+    The entire software stack (Ubuntu 22.04 LTS, ROS 2 Humble Desktop-Full, Gazebo Classic 11, PyTorch CPU, Ultralytics, and OpenCV) is containerized inside a multi-layer Docker image (<code class="inline-code">Dockerfile</code>):
+  </p>
+
+  <div class="two-col avoid-break">
+    <div class="card-box">
+      <h4>X11 Host Display Socket Bridging</h4>
+      <p>
+        In <code class="inline-code">start_docker.sh</code>, the host X11 display socket (<code class="inline-code">/tmp/.X11-unix</code>) is mounted into the container. Passing <code class="inline-code">--net=host</code> and <code class="inline-code">--ipc=host</code> enables zero-latency IPC communication between the container GUI threads and the host X11 display server.
+      </p>
+    </div>
+    <div class="card-box">
+      <h4>Headless & Software Rendering Flags</h4>
+      <p>
+        Setting <code class="inline-code">LIBGL_ALWAYS_SOFTWARE=1</code> forces Mesa software rasterization (LLVMpipe). This eliminates OpenGL driver crashes on laptops lacking discrete GPUs. Passing <code class="inline-code">QT_X11_NO_MITSHM=1</code> prevents Qt shared-memory errors across container namespaces.
+      </p>
+    </div>
+  </div>
+
+  <h2 class="sub-title">4.6 Part 4 Dedicated Viva & Oral Exam Defense Guide</h2>
+
+  <div class="viva-card">
+    <div class="viva-q"><span class="viva-badge">Q4.1</span> Explain the proportional visual servoing control law used during target tracking.</div>
+    <div class="viva-concept">Topic Focus: Visual Servoing & Closed-Loop Steering</div>
+    <div class="viva-ans">
+      <strong>Model Answer:</strong>
+      Our controller implements Image-Based Visual Servoing (IBVS). It computes horizontal tracking error as the difference between the optical image center (320 pixels) and the target animal's detected horizontal center coordinate.
+      <br><br>
+      The commanded angular yaw velocity is computed using a proportional gain of Kp = 0.0028:
+      <br>Turn Speed = 0.0028 &times; (320 &minus; Target Center X) rad/s.
+      <br><br>
+      If the target is to the right of center, the error is negative, commanding a smooth clockwise turn to bring the animal back into the center of the camera view. The output is clamped to [-0.45, 0.45] rad/s to guarantee smooth, non-aggressive steering dynamics.
+    </div>
+  </div>
+
+  <div class="viva-card">
+    <div class="viva-q"><span class="viva-badge">Q4.2</span> Why does the robot execute a sinusoidal S-curve weave during exploration?</div>
+    <div class="viva-concept">Topic Focus: Behavioral Robotics & FOV Expansion</div>
+    <div class="viva-ans">
+      <strong>Model Answer:</strong>
+      A fixed forward-facing monocular camera with an 80-degree horizontal field of view has blind spots on either side when moving in a straight line. Camouflaged animals hidden behind trees or rocks off the direct forward path would remain undetected.
+      <br><br>
+      By introducing a subtle sinusoidal yaw oscillation (0.14 &times; sin(1.5 &times; time)), the camera sweeps continuously across an expanded optical cone (covering approximately 115 degrees of effective visual field over the exploration leg), greatly increasing discovery probability without significantly deviating from the forward exploration path.
+    </div>
+  </div>
+
+  <div class="viva-card">
+    <div class="viva-q"><span class="viva-badge">Q4.3</span> What prevents the robot from getting permanently stuck inspecting the same animal forever?</div>
+    <div class="viva-concept">Topic Focus: Finite State Machine State Sequencing</div>
+    <div class="viva-ans">
+      <strong>Model Answer:</strong>
+      When the robot reaches the 3.0-meter standoff threshold, it initiates a 5.0-second countdown timer (<code class="inline-code">inspection_start_time</code>). 
+      Once 5 seconds elapse:
+      <ol>
+        <li>The node logs confirmation of target inspection and increments the inspected target count.</li>
+        <li>It forcibly overrides the tracking state and transitions to <code class="inline-code">STATE_TURN_BOUNCE</code>.</li>
+        <li>During <code class="inline-code">TURN_BOUNCE</code>, the robot executes a sustained 3.5-second rotation at 0.40 rad/s (approximately 110 degrees deflection), slewing the camera away from the animal and breaking visual lock so exploration can resume in a fresh quadrant.</li>
+      </ol>
+    </div>
+  </div>
+
+  <div class="viva-card">
+    <div class="viva-q"><span class="viva-badge">Q4.4</span> Why did you use Mosaic and MixUp augmentations during camouflage training?</div>
+    <div class="viva-concept">Topic Focus: Deep Learning Data Augmentation</div>
+    <div class="viva-ans">
+      <strong>Model Answer:</strong>
+      <strong>Mosaic (1.0):</strong> Stitches four training images into one composite canvas. This forces the model to recognize animals across four different scale factors simultaneously and creates synthetic crop boundaries, teaching the network to detect partially occluded animals behind trees.
+      <br><br>
+      <strong>MixUp (0.1):</strong> Linearly blends two images by superimposing them semi-transparently. This teaches the convolutional kernels to discern faint, translucent boundary edges, mimicking real-world scenarios where an animal's body is seen through thin foliage or brush.
+    </div>
+  </div>
+
+  <div class="viva-card">
+    <div class="viva-q"><span class="viva-badge">Q4.5</span> What do <code class="inline-code">LIBGL_ALWAYS_SOFTWARE=1</code> and <code class="inline-code">QT_X11_NO_MITSHM=1</code> do in your Docker setup?</div>
+    <div class="viva-concept">Topic Focus: Containerization & Display Forwarding</div>
+    <div class="viva-ans">
+      <strong>Model Answer:</strong>
+      <code class="inline-code">LIBGL_ALWAYS_SOFTWARE=1</code> instructs the Mesa 3D graphics library to bypass hardware GPU drivers and use CPU-based software rasterization (LLVMpipe). On laptops with integrated Intel graphics or non-NVIDIA GPUs, this prevents Gazebo and OGRE from crashing due to unsupported hardware calls.
+      <br><br>
+      <code class="inline-code">QT_X11_NO_MITSHM=1</code> disables the MIT Shared Memory Extension in Qt. Because the Docker container and host operate in separate IPC and memory namespaces, attempting to share memory segments for GUI rendering results in black screens or segmentation faults. Disabling it forces Qt to use standard X11 socket transmission, guaranteeing stable GUI rendering.
+    </div>
+  </div>
+</div>
+
+</body>
+</html>
