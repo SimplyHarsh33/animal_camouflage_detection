@@ -1,0 +1,964 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Camouflage Wildlife Detection — Mission Control Console</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-dark: #0a0e17;
+      --card-bg: #111827;
+      --card-border: #1f2937;
+      --card-hover: #1e293b;
+      --primary: #10b981;
+      --primary-glow: rgba(16, 185, 129, 0.25);
+      --amber: #f59e0b;
+      --blue: #0ea5e9;
+      --purple: #8b5cf6;
+      --danger: #ef4444;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html, body {
+      overscroll-behavior: none;
+    }
+
+    body {
+      background-color: var(--bg-dark);
+      color: var(--text-main);
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow-x: hidden;
+    }
+
+    /* Top Navigation Header */
+    header {
+      background: rgba(17, 24, 39, 0.9);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--card-border);
+      padding: 12px 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .brand-icon {
+      font-size: 24px;
+      background: var(--card-border);
+      padding: 6px;
+      border-radius: 8px;
+    }
+
+    .brand-title {
+      font-size: 16px;
+      font-weight: 800;
+      letter-spacing: -0.01em;
+      color: #ffffff;
+    }
+
+    .brand-sub {
+      font-size: 11px;
+      color: var(--primary);
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 5px 12px;
+      border-radius: 9999px;
+      font-size: 12px;
+      font-weight: 700;
+      font-family: 'JetBrains Mono', monospace;
+      background: rgba(16, 185, 129, 0.15);
+      border: 1px solid rgba(16, 185, 129, 0.3);
+      color: #34d399;
+    }
+
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #34d399;
+      box-shadow: 0 0 8px #34d399;
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0% { opacity: 1; }
+      50% { opacity: 0.4; }
+      100% { opacity: 1; }
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 16px;
+      border-radius: 8px;
+      font-size: 12.5px;
+      font-weight: 700;
+      cursor: pointer;
+      border: none;
+      transition: all 0.2s ease;
+      font-family: inherit;
+    }
+
+    .btn-primary { background: #059669; color: #fff; box-shadow: 0 2px 8px rgba(5,150,105,0.3); }
+    .btn-primary:hover { background: #10b981; transform: translateY(-1px); }
+
+    .btn-danger { background: #dc2626; color: #fff; }
+    .btn-danger:hover { background: #ef4444; }
+
+    .btn-outline { background: transparent; border: 1px solid var(--card-border); color: var(--text-main); }
+    .btn-outline:hover { background: var(--card-hover); border-color: #374151; }
+
+    .btn-amber { background: #d97706; color: #fff; }
+    .btn-amber:hover { background: #f59e0b; }
+
+    /* Main Dashboard Grid */
+    main {
+      padding: 20px 24px;
+      display: grid;
+      grid-template-columns: 1.55fr 1fr;
+      gap: 20px;
+      flex: 1;
+      max-width: 1700px;
+      margin: 0 auto;
+      width: 100%;
+    }
+
+    /* Cards */
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 12px;
+      padding: 18px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    }
+
+    .card-title {
+      font-size: 13px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-muted);
+      margin-bottom: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    /* Live Video Feed Container */
+    .feed-container {
+      position: relative;
+      background: #000;
+      border-radius: 10px;
+      overflow: hidden;
+      aspect-ratio: 4 / 3;
+      border: 1px solid #1f2937;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .feed-img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      display: block;
+    }
+
+    /* Video HUD Overlays */
+    .feed-hud-top {
+      position: absolute;
+      top: 12px;
+      left: 14px;
+      right: 14px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      pointer-events: none;
+    }
+
+    .target-pill {
+      background: rgba(16, 185, 129, 0.85);
+      backdrop-filter: blur(6px);
+      color: #000;
+      padding: 4px 12px;
+      border-radius: 6px;
+      font-size: 11.5px;
+      font-weight: 800;
+      font-family: 'JetBrains Mono', monospace;
+      letter-spacing: 0.03em;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+    }
+
+    .target-pill.scanning {
+      background: rgba(245, 158, 11, 0.85);
+      color: #000;
+    }
+
+    .distance-pill {
+      background: rgba(15, 23, 42, 0.8);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      backdrop-filter: blur(6px);
+      padding: 4px 10px;
+      border-radius: 6px;
+      font-size: 11.5px;
+      font-weight: 700;
+      font-family: 'JetBrains Mono', monospace;
+      color: #fff;
+    }
+
+    .feed-hud-bottom {
+      position: absolute;
+      bottom: 12px;
+      left: 14px;
+      right: 14px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      pointer-events: none;
+    }
+
+    .fps-pill {
+      background: rgba(15, 23, 42, 0.8);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      padding: 3px 8px;
+      border-radius: 4px;
+      font-size: 10.5px;
+      font-family: 'JetBrains Mono', monospace;
+      color: #cbd5e1;
+    }
+
+    /* Telemetry Cards */
+    .telemetry-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    .metric-box {
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid var(--card-border);
+      border-radius: 8px;
+      padding: 12px;
+    }
+
+    .metric-label {
+      font-size: 10px;
+      font-weight: 700;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 4px;
+    }
+
+    .metric-value {
+      font-size: 18px;
+      font-weight: 800;
+      color: #ffffff;
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    .state-badge {
+      display: inline-block;
+      padding: 4px 10px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 800;
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    .state-scan { background: #064e3b; color: #6ee7b7; border: 1px solid #059669; }
+    .state-creep { background: #0c4a6e; color: #7dd3fc; border: 1px solid #0284c7; }
+    .state-track { background: #713f12; color: #fde047; border: 1px solid #ca8a04; }
+    .state-bounce { background: #581c87; color: #d8b4fe; border: 1px solid #9333ea; }
+
+    /* Virtual D-Pad Teleoperation Matrix */
+    .dpad-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 56px);
+      gap: 7px;
+      justify-content: center;
+      margin: 14px auto;
+    }
+
+    .dpad-btn {
+      width: 56px;
+      height: 50px;
+      background: #1e293b;
+      border: 1.5px solid #334155;
+      border-radius: 10px;
+      color: #ffffff;
+      font-size: 16px;
+      font-weight: 800;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.12s ease;
+      user-select: none;
+      -webkit-user-select: none;
+      touch-action: manipulation;
+      outline: none;
+    }
+
+    .dpad-btn.diag {
+      background: #151f30;
+      border-color: #263345;
+      color: #94a3b8;
+      font-size: 14px;
+    }
+
+    .dpad-btn.diag:hover {
+      background: #1e293b;
+      border-color: #38bdf8;
+      color: #38bdf8;
+    }
+
+    .dpad-btn span {
+      font-size: 8.5px;
+      font-weight: 600;
+      color: #94a3b8;
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    .dpad-btn:hover {
+      background: #334155;
+      border-color: var(--primary);
+      transform: translateY(-2px);
+    }
+
+    .dpad-btn:active, .dpad-btn.active {
+      background: var(--primary) !important;
+      color: #000 !important;
+      border-color: #34d399 !important;
+      transform: translateY(1px);
+    }
+
+    .dpad-btn:active span, .dpad-btn.active span {
+      color: #000 !important;
+    }
+
+    .dpad-btn.stop-btn {
+      background: rgba(220, 38, 38, 0.2);
+      border-color: #dc2626;
+      color: #f87171;
+    }
+
+    .dpad-btn.stop-btn:hover { background: #dc2626; color: #fff; }
+
+    /* Controls Bar */
+    .controls-strip {
+      display: flex;
+      gap: 12px;
+      margin-top: 14px;
+      padding-top: 14px;
+      border-top: 1px solid var(--card-border);
+    }
+
+    /* World Gen Controls */
+    .world-controls-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+      margin-top: 12px;
+    }
+
+    .input-group label {
+      display: block;
+      font-size: 10.5px;
+      font-weight: 700;
+      color: var(--text-muted);
+      margin-bottom: 4px;
+      text-transform: uppercase;
+    }
+
+    .input-group select, .input-group input {
+      width: 100%;
+      background: #0f172a;
+      border: 1px solid var(--card-border);
+      border-radius: 6px;
+      padding: 7px 10px;
+      color: #fff;
+      font-size: 12px;
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    /* Toast Notification */
+    #toast {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      background: #0f172a;
+      border: 1px solid var(--primary);
+      color: #fff;
+      padding: 12px 18px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 600;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.5);
+      display: none;
+      z-index: 1000;
+      animation: fadeIn 0.3s ease;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Top Header Navigation -->
+  <header>
+    <div class="brand">
+      <div class="brand-icon">🐆</div>
+      <div>
+        <div class="brand-title">WILDLIFE AI MISSION CONTROL</div>
+        <div class="brand-sub">ROS 2 Humble &bull; Camouflage Animal Detection</div>
+      </div>
+    </div>
+
+    <div class="header-actions">
+      <div class="status-badge" id="system-status-badge">
+        <div class="status-dot"></div>
+        <span id="system-status-text">SYSTEM STANDBY</span>
+      </div>
+
+      <button class="btn btn-primary" id="btn-start-sim" onclick="startSimulation()">
+        ▶ Launch Simulation
+      </button>
+
+      <button class="btn btn-danger" id="btn-stop-sim" onclick="stopSimulation()">
+        ⏹ Stop All
+      </button>
+
+      <button class="btn btn-outline" onclick="captureSnapshot()">
+        📷 Snapshot
+      </button>
+    </div>
+  </header>
+
+  <!-- Main Dashboard Content -->
+  <main>
+    <!-- Left Column: Video Feed & Procedural Generation -->
+    <div style="display: flex; flex-direction: column; gap: 20px;">
+      <!-- Video Stream Card -->
+      <div class="card">
+        <div class="card-title">
+          <span>🎥 Live Robot Camera Perception HUD</span>
+          <span style="font-size: 11px; font-weight: 600; color: #10b981;">Topic: /animal_detection/annotated_image</span>
+        </div>
+
+        <div class="feed-container">
+          <!-- Video stream endpoint -->
+          <img class="feed-img" id="live-stream-img" src="/video_feed" alt="Robot Camera Feed">
+
+          <!-- Top HUD Overlay -->
+          <div class="feed-hud-top">
+            <div class="target-pill" id="hud-target-pill">🦌 TARGET ACQUIRED: DEER</div>
+            <div class="distance-pill" id="hud-dist-pill">EST. DISTANCE: 3.2m</div>
+          </div>
+
+          <!-- Bottom HUD Overlay -->
+          <div class="feed-hud-bottom">
+            <div class="fps-pill" id="hud-fps-pill">FPS: 18.2 | LATENCY: 38ms</div>
+            <div class="fps-pill" style="color: #38bdf8;">MODE: MONOCULAR PINHOLE</div>
+          </div>
+        </div>
+
+        <div class="controls-strip">
+          <label style="display: flex; align-items: center; gap: 8px; font-size: 12px; cursor: pointer;">
+            <input type="checkbox" id="headless-checkbox" checked>
+            <span>Run Gazebo in Headless Mode (Zero 3D Window, 1.0 Real Time Factor)</span>
+          </label>
+        </div>
+      </div>
+
+      <!-- Procedural World Generator Card -->
+      <div class="card">
+        <div class="card-title">
+          <span>🌲 Procedural Forest Arena Generator</span>
+          <span style="font-size: 11px; font-weight: 600; color: #a855f7;">Domain Randomization</span>
+        </div>
+
+        <p style="font-size: 12px; color: var(--text-muted); line-height: 1.5;">
+          Synthesize a brand new randomized forest environment with Poisson-disc vegetation distribution, camouflage concealment tiers, and random solar lighting angles:
+        </p>
+
+        <div class="world-controls-grid">
+          <div class="input-group">
+            <label>Vegetation Density</label>
+            <select id="world-density">
+              <option value="low">Low (Light CPU)</option>
+              <option value="medium" selected>Medium (Standard)</option>
+              <option value="high">High (Dense Brush)</option>
+            </select>
+          </div>
+
+          <div class="input-group">
+            <label>Number of Deer</label>
+            <select id="world-deer-count">
+              <option value="1">1 Deer Target</option>
+              <option value="2">2 Deer Targets</option>
+              <option value="3" selected>3 Deer Targets</option>
+              <option value="4">4 Deer Targets</option>
+            </select>
+          </div>
+
+          <div class="input-group">
+            <label>Random Seed</label>
+            <input type="number" id="world-seed" value="42" placeholder="e.g. 42">
+          </div>
+
+          <div class="input-group" style="display: flex; align-items: flex-end;">
+            <button class="btn btn-amber" style="width: 100%;" onclick="regenerateWorld()">
+              🎲 Rebuild World
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right Column: Live Telemetry & Manual Teleoperation -->
+    <div style="display: flex; flex-direction: column; gap: 20px;">
+      
+      <!-- Telemetry Status Card -->
+      <div class="card">
+        <div class="card-title">
+          <span>📊 Live Perception Telemetry</span>
+          <span id="telemetry-live-dot" style="color: #34d399; font-size: 11px;">● LIVE 15 Hz</span>
+        </div>
+
+        <div class="telemetry-grid">
+          <div class="metric-box">
+            <div class="metric-label">Target Detected</div>
+            <div class="metric-value" id="val-target-name" style="color: #34d399;">DEER</div>
+          </div>
+
+          <div class="metric-box">
+            <div class="metric-label">Estimated Distance</div>
+            <div class="metric-value" id="val-distance">3.2 m</div>
+          </div>
+
+          <div class="metric-box">
+            <div class="metric-label">Detection Confidence</div>
+            <div class="metric-value" id="val-confidence" style="color: #38bdf8;">76.4%</div>
+          </div>
+
+          <div class="metric-box">
+            <div class="metric-label">Camera Frame Rate</div>
+            <div class="metric-value" id="val-fps">18.5 FPS</div>
+          </div>
+        </div>
+
+        <!-- FSM State Box -->
+        <div style="background: rgba(255,255,255,0.02); border: 1px solid var(--card-border); border-radius: 8px; padding: 12px; margin-bottom: 14px;">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <div>
+              <div class="metric-label">Autonomous FSM State</div>
+              <div style="margin-top: 4px;">
+                <span class="state-badge state-scan" id="val-fsm-state">SCAN_SWEEP (360°)</span>
+              </div>
+            </div>
+            <div style="text-align: right;">
+              <div class="metric-label">Targets Inspected</div>
+              <div class="metric-value" id="val-inspected-count" style="font-size: 16px;">0</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Mode Toggle Button -->
+        <div style="display: flex; gap: 10px;">
+          <button class="btn btn-primary" id="btn-toggle-auto" style="flex: 1; justify-content: center;" onclick="toggleAutonomy()">
+            🤖 Start Autonomous Patrol
+          </button>
+        </div>
+      </div>
+
+      <!-- Teleoperation Controls Card -->
+      <div class="card">
+        <div class="card-title">
+          <span>🕹️ Manual Robot Steering (Teleop)</span>
+          <span style="font-size: 11px; color: var(--text-muted);">WASD Keyboard Active</span>
+        </div>
+
+        <p style="font-size: 11.5px; color: var(--text-muted); text-align: center; margin-bottom: 8px;">
+          Click the buttons below or press <strong>W, A, S, D</strong> directly on your keyboard to steer the robot:
+        </p>
+
+        <!-- 3x3 Tactical Flight D-Pad Matrix (Supports Simultaneous & Diagonal Driving) -->
+        <div class="dpad-grid" style="user-select: none;">
+          <!-- Row 1: Forward-Left, Forward, Forward-Right -->
+          <button type="button" class="dpad-btn diag" id="btn-diag-ul" title="Forward + Left Arc (Q)"
+                  onmousedown="event.preventDefault(); sendVelocity(0.25, 0.40)" 
+                  onmouseup="event.preventDefault(); sendVelocity(0.0, 0.0)"
+                  ontouchstart="event.preventDefault(); sendVelocity(0.25, 0.40)"
+                  ontouchend="event.preventDefault(); sendVelocity(0.0, 0.0)">
+            ↖<span>Q</span>
+          </button>
+          <button type="button" class="dpad-btn" id="btn-up" title="Forward (W / Up Arrow)"
+                  onmousedown="event.preventDefault(); sendVelocity(0.28, 0.0)" 
+                  onmouseup="event.preventDefault(); sendVelocity(0.0, 0.0)"
+                  ontouchstart="event.preventDefault(); sendVelocity(0.28, 0.0)"
+                  ontouchend="event.preventDefault(); sendVelocity(0.0, 0.0)">
+            ▲<span>W</span>
+          </button>
+          <button type="button" class="dpad-btn diag" id="btn-diag-ur" title="Forward + Right Arc (E)"
+                  onmousedown="event.preventDefault(); sendVelocity(0.25, -0.40)" 
+                  onmouseup="event.preventDefault(); sendVelocity(0.0, 0.0)"
+                  ontouchstart="event.preventDefault(); sendVelocity(0.25, -0.40)"
+                  ontouchend="event.preventDefault(); sendVelocity(0.0, 0.0)">
+            ↗<span>E</span>
+          </button>
+
+          <!-- Row 2: Turn Left, Stop, Turn Right -->
+          <button type="button" class="dpad-btn" id="btn-left" title="Spin Left (A / Left Arrow)"
+                  onmousedown="event.preventDefault(); sendVelocity(0.0, 0.40)" 
+                  onmouseup="event.preventDefault(); sendVelocity(0.0, 0.0)"
+                  ontouchstart="event.preventDefault(); sendVelocity(0.0, 0.40)"
+                  ontouchend="event.preventDefault(); sendVelocity(0.0, 0.0)">
+            ◀<span>A</span>
+          </button>
+          <button type="button" class="dpad-btn stop-btn" id="btn-stop" title="Emergency Brake (SPACE)"
+                  onclick="event.preventDefault(); sendVelocity(0.0, 0.0)">
+            ⏹<span>STOP</span>
+          </button>
+          <button type="button" class="dpad-btn" id="btn-right" title="Spin Right (D / Right Arrow)"
+                  onmousedown="event.preventDefault(); sendVelocity(0.0, -0.40)" 
+                  onmouseup="event.preventDefault(); sendVelocity(0.0, 0.0)"
+                  ontouchstart="event.preventDefault(); sendVelocity(0.0, -0.40)"
+                  ontouchend="event.preventDefault(); sendVelocity(0.0, 0.0)">
+            ▶<span>D</span>
+          </button>
+
+          <!-- Row 3: Reverse-Left, Reverse, Reverse-Right -->
+          <button type="button" class="dpad-btn diag" id="btn-diag-dl" title="Reverse + Left Arc (Z)"
+                  onmousedown="event.preventDefault(); sendVelocity(-0.20, 0.40)" 
+                  onmouseup="event.preventDefault(); sendVelocity(0.0, 0.0)"
+                  ontouchstart="event.preventDefault(); sendVelocity(-0.20, 0.40)"
+                  ontouchend="event.preventDefault(); sendVelocity(0.0, 0.0)">
+            ↙<span>Z</span>
+          </button>
+          <button type="button" class="dpad-btn" id="btn-down" title="Reverse (S / Down Arrow)"
+                  onmousedown="event.preventDefault(); sendVelocity(-0.22, 0.0)" 
+                  onmouseup="event.preventDefault(); sendVelocity(0.0, 0.0)"
+                  ontouchstart="event.preventDefault(); sendVelocity(-0.22, 0.0)"
+                  ontouchend="event.preventDefault(); sendVelocity(0.0, 0.0)">
+            ▼<span>S</span>
+          </button>
+          <button type="button" class="dpad-btn diag" id="btn-diag-dr" title="Reverse + Right Arc (C)"
+                  onmousedown="event.preventDefault(); sendVelocity(-0.20, -0.40)" 
+                  onmouseup="event.preventDefault(); sendVelocity(0.0, 0.0)"
+                  ontouchstart="event.preventDefault(); sendVelocity(-0.20, -0.40)"
+                  ontouchend="event.preventDefault(); sendVelocity(0.0, 0.0)">
+            ↘<span>C</span>
+          </button>
+        </div>
+
+        <p style="font-size: 11px; color: #64748b; text-align: center; margin-top: 10px;">
+          Simultaneous Controls Active: Hold <strong>W+D</strong> (Arc Right), <strong>W+A</strong> (Arc Left), <strong>S+D</strong>, <strong>S+A</strong>, or Spacebar to brake.
+        </p>
+      </div>
+
+    </div>
+  </main>
+
+  <div id="toast">Notification message here</div>
+
+  <script>
+    let isAutonomousActive = false;
+    const activeKeys = {};
+
+    function showToast(msg) {
+      const toast = document.getElementById('toast');
+      toast.innerText = msg;
+      toast.style.display = 'block';
+      setTimeout(() => { toast.style.display = 'none'; }, 3000);
+    }
+
+    // Send velocity command to backend (/api/cmd_vel)
+    function sendVelocity(linear_x, angular_z) {
+      fetch('/api/cmd_vel', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ linear_x: linear_x, angular_z: angular_z })
+      }).catch(err => console.error("Velocity send error:", err));
+    }
+
+    // Keys used for steering (must not trigger browser page scrolling)
+    const TELEOP_KEYS = ['w', 'a', 's', 'd', 'q', 'e', 'z', 'c', 'x', ' ', 'arrowup', 'arrowdown', 'arrowleft', 'arrowright'];
+
+    // Multi-Key Simultaneous Velocity Resolver
+    function updateVelocityFromActiveKeys() {
+      // Emergency Stop key pressed
+      if (activeKeys[' '] || activeKeys['x']) {
+        sendVelocity(0.0, 0.0);
+        document.querySelectorAll('.dpad-btn').forEach(btn => btn.classList.remove('active'));
+        document.getElementById('btn-stop')?.classList.add('active');
+        return;
+      }
+
+      let linear = 0.0;
+      let angular = 0.0;
+
+      // Linear motion (Forward / Backward)
+      const isUp = !!(activeKeys['w'] || activeKeys['arrowup']);
+      const isDown = !!(activeKeys['s'] || activeKeys['arrowdown']);
+
+      if (isUp && !isDown) {
+        linear = 0.28;
+      } else if (isDown && !isUp) {
+        linear = -0.22;
+      }
+
+      // Angular steering (+w turns LEFT, -w turns RIGHT)
+      const isLeft = !!(activeKeys['a'] || activeKeys['arrowleft']);
+      const isRight = !!(activeKeys['d'] || activeKeys['arrowright']);
+
+      if (isLeft && !isRight) {
+        angular = 0.40;  // Turn Left
+      } else if (isRight && !isLeft) {
+        angular = -0.40; // Turn Right
+      }
+
+      // Dedicated single-key diagonal shortcuts (Q, E, Z, C)
+      if (activeKeys['q']) { linear = 0.25; angular = 0.40; }
+      if (activeKeys['e']) { linear = 0.25; angular = -0.40; }
+      if (activeKeys['z']) { linear = -0.20; angular = 0.40; }
+      if (activeKeys['c']) { linear = -0.20; angular = -0.40; }
+
+      // Update UI button highlight states (supports multi-button highlights)
+      document.querySelectorAll('.dpad-btn').forEach(btn => btn.classList.remove('active'));
+
+      if (isUp && isRight) {
+        document.getElementById('btn-up')?.classList.add('active');
+        document.getElementById('btn-right')?.classList.add('active');
+        document.getElementById('btn-diag-ur')?.classList.add('active');
+      } else if (isUp && isLeft) {
+        document.getElementById('btn-up')?.classList.add('active');
+        document.getElementById('btn-left')?.classList.add('active');
+        document.getElementById('btn-diag-ul')?.classList.add('active');
+      } else if (isDown && isRight) {
+        document.getElementById('btn-down')?.classList.add('active');
+        document.getElementById('btn-right')?.classList.add('active');
+        document.getElementById('btn-diag-dr')?.classList.add('active');
+      } else if (isDown && isLeft) {
+        document.getElementById('btn-down')?.classList.add('active');
+        document.getElementById('btn-left')?.classList.add('active');
+        document.getElementById('btn-diag-dl')?.classList.add('active');
+      } else {
+        if (isUp) document.getElementById('btn-up')?.classList.add('active');
+        if (isDown) document.getElementById('btn-down')?.classList.add('active');
+        if (isLeft) document.getElementById('btn-left')?.classList.add('active');
+        if (isRight) document.getElementById('btn-right')?.classList.add('active');
+        if (activeKeys['q']) document.getElementById('btn-diag-ul')?.classList.add('active');
+        if (activeKeys['e']) document.getElementById('btn-diag-ur')?.classList.add('active');
+        if (activeKeys['z']) document.getElementById('btn-diag-dl')?.classList.add('active');
+        if (activeKeys['c']) document.getElementById('btn-diag-dr')?.classList.add('active');
+      }
+
+      sendVelocity(linear, angular);
+    }
+
+    // Keyboard Teleoperation Listener
+    window.addEventListener('keydown', (e) => {
+      if (['input', 'select', 'textarea'].includes(e.target.tagName.toLowerCase())) return;
+
+      const key = e.key.toLowerCase();
+      if (TELEOP_KEYS.includes(key)) {
+        e.preventDefault();
+        activeKeys[key] = true;
+        updateVelocityFromActiveKeys();
+      }
+    });
+
+    window.addEventListener('keyup', (e) => {
+      if (['input', 'select', 'textarea'].includes(e.target.tagName.toLowerCase())) return;
+
+      const key = e.key.toLowerCase();
+      if (TELEOP_KEYS.includes(key)) {
+        e.preventDefault();
+        delete activeKeys[key];
+        updateVelocityFromActiveKeys();
+      }
+    });
+
+    // Reset when browser window blurs
+    window.addEventListener('blur', () => {
+      for (const k in activeKeys) delete activeKeys[k];
+      updateVelocityFromActiveKeys();
+    });
+
+    // Launch Simulation
+    function startSimulation() {
+      const headless = document.getElementById('headless-checkbox').checked;
+      showToast("Launching ROS 2 & Gazebo Simulation...");
+      fetch('/api/system/start', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ gui: !headless, recognition: true, autonomous: false })
+      })
+      .then(res => res.json())
+      .then(data => {
+        showToast(data.message);
+        document.getElementById('system-status-text').innerText = "SIMULATION RUNNING";
+      })
+      .catch(err => showToast("Error launching simulation: " + err));
+    }
+
+    // Stop Simulation
+    function stopSimulation() {
+      showToast("Terminating simulation processes...");
+      fetch('/api/system/stop', { method: 'POST' })
+      .then(res => res.json())
+      .then(data => {
+        showToast(data.message);
+        document.getElementById('system-status-text').innerText = "SYSTEM STOPPED";
+      });
+    }
+
+    // Toggle Autonomy
+    function toggleAutonomy() {
+      isAutonomousActive = !isAutonomousActive;
+      const btn = document.getElementById('btn-toggle-auto');
+      if (isAutonomousActive) {
+        btn.innerText = "✋ Switch to Manual Steering";
+        btn.classList.remove('btn-primary');
+        btn.classList.add('btn-amber');
+        showToast("Autonomous Wildlife Patrol Activated!");
+        fetch('/api/system/autonomy', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ active: true })
+        });
+      } else {
+        btn.innerText = "🤖 Start Autonomous Patrol";
+        btn.classList.remove('btn-amber');
+        btn.classList.add('btn-primary');
+        showToast("Switched to Manual Teleop Control");
+        fetch('/api/system/autonomy', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ active: false })
+        });
+      }
+    }
+
+    // Regenerate World
+    function regenerateWorld() {
+      const density = document.getElementById('world-density').value;
+      const deerCount = document.getElementById('world-deer-count').value;
+      const seed = document.getElementById('world-seed').value;
+
+      showToast(`Generating procedural forest with Seed ${seed}...`);
+      fetch('/api/system/regenerate_world', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ density: density, num_deer: deerCount, seed: seed })
+      })
+      .then(res => res.json())
+      .then(data => showToast(data.message));
+    }
+
+    // Capture Snapshot
+    function captureSnapshot() {
+      fetch('/api/system/capture_frame', { method: 'POST' })
+      .then(res => res.json())
+      .then(data => showToast(data.message));
+    }
+
+    // Periodic Telemetry Poller (350 ms - smooth 3 Hz polling)
+    setInterval(() => {
+      fetch('/api/telemetry')
+      .then(res => res.json())
+      .then(data => {
+        if (!data) return;
+
+        // Mode badge update
+        if (data.mode && data.mode !== "STANDBY") {
+          document.getElementById('system-status-text').innerText = data.mode === "WINDOWS_SIM" ? "WIN SIM ACTIVE" : "ROS 2 ACTIVE";
+        }
+
+        // FPS & Latency
+        if (data.fps) {
+          document.getElementById('val-fps').innerText = `${data.fps.toFixed(1)} FPS`;
+          document.getElementById('hud-fps-pill').innerText = `FPS: ${data.fps.toFixed(1)} | LATENCY: ${data.inference_time_ms ? data.inference_time_ms.toFixed(0) : 32}ms`;
+        }
+
+        // Targets
+        if (data.target_acquired && data.primary_target) {
+          const pt = data.primary_target;
+          document.getElementById('val-target-name').innerText = pt.label || "DEER";
+          document.getElementById('val-target-name').style.color = "#34d399";
+          document.getElementById('val-distance').innerText = `${pt.distance_m.toFixed(1)} m`;
+          document.getElementById('val-confidence').innerText = `${(pt.confidence * 100).toFixed(1)}%`;
+
+          document.getElementById('hud-target-pill').innerText = `🦌 TARGET ACQUIRED: ${pt.label}`;
+          document.getElementById('hud-target-pill').classList.remove('scanning');
+          document.getElementById('hud-dist-pill').innerText = `EST. DISTANCE: ${pt.distance_m.toFixed(1)}m`;
+        } else {
+          document.getElementById('val-target-name').innerText = "NONE";
+          document.getElementById('val-target-name').style.color = "#94a3b8";
+          document.getElementById('val-distance').innerText = "--";
+          document.getElementById('val-confidence').innerText = "--";
+
+          document.getElementById('hud-target-pill').innerText = "SCANNING SECTOR...";
+          document.getElementById('hud-target-pill').classList.add('scanning');
+          document.getElementById('hud-dist-pill').innerText = "SEARCHING...";
+        }
+
+        // FSM State
+        if (data.fsm_state) {
+          const badge = document.getElementById('val-fsm-state');
+          badge.innerText = data.fsm_state;
+          badge.className = 'state-badge';
+          if (data.fsm_state.includes('SCAN')) badge.classList.add('state-scan');
+          else if (data.fsm_state.includes('CREEP')) badge.classList.add('state-creep');
+          else if (data.fsm_state.includes('TRACK')) badge.classList.add('state-track');
+          else if (data.fsm_state.includes('BOUNCE')) badge.classList.add('state-bounce');
+        }
+
+        if (data.inspected_count !== undefined) {
+          document.getElementById('val-inspected-count').innerText = data.inspected_count;
+        }
+      })
+      .catch(err => {
+        // Backend offline or polling idle
+      });
+    }, 350);
+  </script>
+</body>
+</html>

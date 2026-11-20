@@ -85,20 +85,34 @@ colcon build --symlink-install
 source install/setup.bash
 ```
 
-### Step 3: Launch Gazebo Simulation
+### Step 3: Launch Mission Control Dashboard (Web GUI)
+Instead of running commands in multiple separate terminals, you can launch the interactive Web Dashboard:
 ```bash
-ros2 launch animal_detection simulation.launch.py
+python3 start_dashboard.py
+# Or on Windows host: double-click start_dashboard.bat
+```
+Then open `http://localhost:5000` to control the robot, view the live camera feed, monitor AI telemetry, and toggle autonomous patrol with 1 click!
+
+---
+
+### Alternative: Manual Step-by-Step CLI Launch
+
+#### Step 3A: Launch Gazebo Simulation
+```bash
+ros2 launch animal_gazebo simulation.launch.py gui:=true
 ```
 
-### Step 4: Run YOLO Detection Node
+#### Step 4: Run YOLO Detection Node
 Open a second Docker terminal:
 ```bash
-ros2 run animal_detection perception_node.py
+ros2 launch animal_recognition recognition.launch.py
 ```
 
-### Step 5: (Optional) Keyboard Teleop
+#### Step 5: (Optional) Keyboard Teleop
 ```bash
-ros2 run teleop_twist_keyboard teleop_twist_keyboard
+ros2 run animal_control autonomous_patrol.py
+# Or keyboard control:
+ros2 run teleop_twist_keyboard teleop_twist_keyboard --ros-args -r cmd_vel:=/animal_robot/cmd_vel
 ```
 
 ---

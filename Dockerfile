@@ -30,7 +30,8 @@ RUN pip3 install --no-cache-dir \
     Pillow \
     scipy \
     tqdm \
-    seaborn
+    seaborn \
+    flask
 
 # Set working directory inside container
 WORKDIR /workspace
