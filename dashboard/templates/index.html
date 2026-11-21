@@ -415,6 +415,14 @@
       font-family: 'JetBrains Mono', monospace;
     }
 
+    /* Terminal Log Console */
+    @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
+    .cursor-blink { animation: blink 1s infinite; margin-left: 2px; }
+    #terminal-console-box::-webkit-scrollbar { width: 6px; }
+    #terminal-console-box::-webkit-scrollbar-track { background: #0a0f1d; }
+    #terminal-console-box::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+    #terminal-console-box::-webkit-scrollbar-thumb:hover { background: #475569; }
+
     /* Toast Notification */
     #toast {
       position: fixed;
@@ -623,9 +631,9 @@
         <div class="dpad-grid" style="user-select: none;">
           <!-- Row 1: Forward-Left, Forward, Forward-Right -->
           <button type="button" class="dpad-btn diag" id="btn-diag-ul" title="Forward + Left Arc (Q)"
-                  onmousedown="event.preventDefault(); sendVelocity(0.25, 0.40)" 
+                  onmousedown="event.preventDefault(); sendVelocity(0.25, 0.80)" 
                   onmouseup="event.preventDefault(); sendVelocity(0.0, 0.0)"
-                  ontouchstart="event.preventDefault(); sendVelocity(0.25, 0.40)"
+                  ontouchstart="event.preventDefault(); sendVelocity(0.25, 0.80)"
                   ontouchend="event.preventDefault(); sendVelocity(0.0, 0.0)">
             ↖<span>Q</span>
           </button>
@@ -637,18 +645,18 @@
             ▲<span>W</span>
           </button>
           <button type="button" class="dpad-btn diag" id="btn-diag-ur" title="Forward + Right Arc (E)"
-                  onmousedown="event.preventDefault(); sendVelocity(0.25, -0.40)" 
+                  onmousedown="event.preventDefault(); sendVelocity(0.25, -0.80)" 
                   onmouseup="event.preventDefault(); sendVelocity(0.0, 0.0)"
-                  ontouchstart="event.preventDefault(); sendVelocity(0.25, -0.40)"
+                  ontouchstart="event.preventDefault(); sendVelocity(0.25, -0.80)"
                   ontouchend="event.preventDefault(); sendVelocity(0.0, 0.0)">
             ↗<span>E</span>
           </button>
 
           <!-- Row 2: Turn Left, Stop, Turn Right -->
           <button type="button" class="dpad-btn" id="btn-left" title="Spin Left (A / Left Arrow)"
-                  onmousedown="event.preventDefault(); sendVelocity(0.0, 0.40)" 
+                  onmousedown="event.preventDefault(); sendVelocity(0.0, 0.90)" 
                   onmouseup="event.preventDefault(); sendVelocity(0.0, 0.0)"
-                  ontouchstart="event.preventDefault(); sendVelocity(0.0, 0.40)"
+                  ontouchstart="event.preventDefault(); sendVelocity(0.0, 0.90)"
                   ontouchend="event.preventDefault(); sendVelocity(0.0, 0.0)">
             ◀<span>A</span>
           </button>
@@ -657,18 +665,18 @@
             ⏹<span>STOP</span>
           </button>
           <button type="button" class="dpad-btn" id="btn-right" title="Spin Right (D / Right Arrow)"
-                  onmousedown="event.preventDefault(); sendVelocity(0.0, -0.40)" 
+                  onmousedown="event.preventDefault(); sendVelocity(0.0, -0.90)" 
                   onmouseup="event.preventDefault(); sendVelocity(0.0, 0.0)"
-                  ontouchstart="event.preventDefault(); sendVelocity(0.0, -0.40)"
+                  ontouchstart="event.preventDefault(); sendVelocity(0.0, -0.90)"
                   ontouchend="event.preventDefault(); sendVelocity(0.0, 0.0)">
             ▶<span>D</span>
           </button>
 
           <!-- Row 3: Reverse-Left, Reverse, Reverse-Right -->
           <button type="button" class="dpad-btn diag" id="btn-diag-dl" title="Reverse + Left Arc (Z)"
-                  onmousedown="event.preventDefault(); sendVelocity(-0.20, 0.40)" 
+                  onmousedown="event.preventDefault(); sendVelocity(-0.20, 0.80)" 
                   onmouseup="event.preventDefault(); sendVelocity(0.0, 0.0)"
-                  ontouchstart="event.preventDefault(); sendVelocity(-0.20, 0.40)"
+                  ontouchstart="event.preventDefault(); sendVelocity(-0.20, 0.80)"
                   ontouchend="event.preventDefault(); sendVelocity(0.0, 0.0)">
             ↙<span>Z</span>
           </button>
@@ -680,9 +688,9 @@
             ▼<span>S</span>
           </button>
           <button type="button" class="dpad-btn diag" id="btn-diag-dr" title="Reverse + Right Arc (C)"
-                  onmousedown="event.preventDefault(); sendVelocity(-0.20, -0.40)" 
+                  onmousedown="event.preventDefault(); sendVelocity(-0.20, -0.80)" 
                   onmouseup="event.preventDefault(); sendVelocity(0.0, 0.0)"
-                  ontouchstart="event.preventDefault(); sendVelocity(-0.20, -0.40)"
+                  ontouchstart="event.preventDefault(); sendVelocity(-0.20, -0.80)"
                   ontouchend="event.preventDefault(); sendVelocity(0.0, 0.0)">
             ↘<span>C</span>
           </button>
@@ -691,6 +699,39 @@
         <p style="font-size: 11px; color: #64748b; text-align: center; margin-top: 10px;">
           Simultaneous Controls Active: Hold <strong>W+D</strong> (Arc Right), <strong>W+A</strong> (Arc Left), <strong>S+D</strong>, <strong>S+A</strong>, or Spacebar to brake.
         </p>
+      </div>
+
+      <!-- Live Mission Control Terminal Console Card -->
+      <div class="card" style="display: flex; flex-direction: column; gap: 8px;">
+        <div class="card-title" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2px;">
+          <span style="display: flex; align-items: center; gap: 6px;">
+            <span>📟</span>
+            <span>Live Mission Terminal</span>
+          </span>
+          <div style="display: flex; gap: 8px; align-items: center;">
+            <button type="button" class="btn" style="padding: 3px 8px; font-size: 10.5px; background: #1e293b; border: 1px solid #334155; color: #94a3b8; border-radius: 6px;" onclick="clearTerminalLogs()">
+              🗑️ Clear
+            </button>
+            <span style="font-size: 10.5px; color: #34d399; font-family: 'JetBrains Mono', monospace; font-weight: 600;">● STREAMING</span>
+          </div>
+        </div>
+
+        <div id="terminal-console-box" style="
+          background: #050811;
+          border: 1px solid #1e293b;
+          border-radius: 8px;
+          height: 180px;
+          overflow-y: auto;
+          padding: 8px 12px;
+          font-family: 'JetBrains Mono', monospace;
+          font-size: 11px;
+          line-height: 1.6;
+          color: #e2e8f0;
+          box-shadow: inset 0 2px 6px rgba(0,0,0,0.6);
+        ">
+          <!-- Real-time logs render here -->
+          <div style="color: #64748b;">Initializing terminal stream...</div>
+        </div>
       </div>
 
     </div>
@@ -749,16 +790,16 @@
       const isRight = !!(activeKeys['d'] || activeKeys['arrowright']);
 
       if (isLeft && !isRight) {
-        angular = 0.40;  // Turn Left
+        angular = 0.90;  // Turn Left (Snappy steering)
       } else if (isRight && !isLeft) {
-        angular = -0.40; // Turn Right
+        angular = -0.90; // Turn Right (Snappy steering)
       }
 
       // Dedicated single-key diagonal shortcuts (Q, E, Z, C)
-      if (activeKeys['q']) { linear = 0.25; angular = 0.40; }
-      if (activeKeys['e']) { linear = 0.25; angular = -0.40; }
-      if (activeKeys['z']) { linear = -0.20; angular = 0.40; }
-      if (activeKeys['c']) { linear = -0.20; angular = -0.40; }
+      if (activeKeys['q']) { linear = 0.25; angular = 0.80; }
+      if (activeKeys['e']) { linear = 0.25; angular = -0.80; }
+      if (activeKeys['z']) { linear = -0.20; angular = 0.80; }
+      if (activeKeys['c']) { linear = -0.20; angular = -0.80; }
 
       // Update UI button highlight states (supports multi-button highlights)
       document.querySelectorAll('.dpad-btn').forEach(btn => btn.classList.remove('active'));
@@ -954,11 +995,61 @@
         if (data.inspected_count !== undefined) {
           document.getElementById('val-inspected-count').innerText = data.inspected_count;
         }
+
+        // Live Mission Control Terminal Log Stream
+        if (data.logs && Array.isArray(data.logs)) {
+          renderTerminalLogs(data.logs);
+        }
       })
       .catch(err => {
         // Backend offline or polling idle
       });
     }, 350);
+
+    // Live Terminal Console Rendering Engine
+    let lastRenderedLogCount = 0;
+
+    function renderTerminalLogs(logs) {
+      const box = document.getElementById('terminal-console-box');
+      if (!box || !Array.isArray(logs)) return;
+
+      if (logs.length === lastRenderedLogCount) return;
+      lastRenderedLogCount = logs.length;
+
+      let html = '';
+      logs.forEach(log => {
+        let tagColor = '#38bdf8'; // blue
+        if (log.level === 'TARGET') tagColor = '#34d399'; // green
+        else if (log.level === 'PATROL' || log.level === 'FSM') tagColor = '#fbbf24'; // amber
+        else if (log.level === 'TELEOP') tagColor = '#c084fc'; // purple
+        else if (log.level === 'SYSTEM') tagColor = '#f43f5e'; // red-pink
+        else if (log.level === 'WORLD') tagColor = '#10b981'; // emerald
+        else if (log.level === 'SNAPSHOT') tagColor = '#a855f7'; // violet
+
+        html += `<div style="margin-bottom: 2px;"><span style="color: #64748b;">[${log.time}]</span> <span style="color: ${tagColor}; font-weight: 700;">[${log.level}]</span> <span style="color: #f1f5f9;">${escapeHtml(log.msg)}</span></div>`;
+      });
+
+      html += `<div style="color: #34d399; margin-top: 4px;"><span style="color: #64748b;">></span> live telemetry active<span class="cursor-blink">▋</span></div>`;
+
+      const shouldScroll = (box.scrollHeight - box.scrollTop - box.clientHeight) < 60;
+      box.innerHTML = html;
+      if (shouldScroll || lastRenderedLogCount <= 5) {
+        box.scrollTop = box.scrollHeight;
+      }
+    }
+
+    function escapeHtml(text) {
+      if (!text) return '';
+      return String(text).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    }
+
+    function clearTerminalLogs() {
+      fetch('/api/logs/clear', { method: 'POST' })
+        .then(() => {
+          lastRenderedLogCount = 0;
+          document.getElementById('terminal-console-box').innerHTML = '<div style="color: #64748b;">Console logs cleared.</div>';
+        });
+    }
   </script>
 </body>
 </html>

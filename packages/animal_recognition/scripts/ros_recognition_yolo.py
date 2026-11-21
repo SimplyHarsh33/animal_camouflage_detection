@@ -20,6 +20,14 @@ import numpy as np
 import json
 import os
 import time
+import threading
+
+try:
+    import torch
+    # Restrict PyTorch CPU threads to avoid starving Gazebo simulation physics
+    torch.set_num_threads(2)
+except Exception:
+    pass
 
 try:
     from ultralytics import YOLO
@@ -129,7 +137,79 @@ class CamouflageDetectionNode(Node):
         self.ungulate_coco_classes = {'horse', 'giraffe', 'cow', 'sheep', 'zebra', 'bear', 'deer', 'dog', 'elephant', 'cat'}
         self.noise_coco_classes = {'bird', 'potted plant', 'kite', 'bench', 'chair', 'umbrella'}
 
-        self.get_logger().info('Camouflage Detection Node is active and optimized for Intel i5!')
+        # Performance Architecture: Decoupled Asynchronous Inference Worker
+        self.declare_parameter('inference_imgsz', 384)
+        self.inference_imgsz = self.get_parameter('inference_imgsz').get_parameter_value().integer_value
+
+        self.infer_lock = threading.Lock()
+        self.latest_input_frame = None
+        self.latest_raw_detections = []
+        self.is_running = True
+        self.worker_thread = threading.Thread(target=self._inference_worker, daemon=True)
+        self.worker_thread.start()
+
+        self.get_logger().info(f'Camouflage Detection Node is active (Asynchronous 30FPS Pipeline, imgsz={self.inference_imgsz})!')
+
+    def _inference_worker(self):
+        """Asynchronous background worker running YOLO inference continuously without blocking ROS callback."""
+        while self.is_running:
+            frame_to_process = None
+            with self.infer_lock:
+                if self.latest_input_frame is not None:
+                    frame_to_process = self.latest_input_frame.copy()
+                    self.latest_input_frame = None
+
+            if frame_to_process is not None and self.model is not None:
+                start_inf = time.time()
+                try:
+                    processed_frame = self.preprocess_for_camouflage(frame_to_process)
+                    results = self.model(
+                        processed_frame,
+                        imgsz=self.inference_imgsz,
+                        conf=self.conf_threshold,
+                        verbose=False
+                    )
+
+                    raw_detections = []
+                    for result in results:
+                        boxes = result.boxes
+                        for box in boxes:
+                            cls_id = int(box.cls[0])
+                            cls_name = self.model.names[cls_id].lower() if hasattr(self.model, 'names') else str(cls_id)
+                            conf = float(box.conf[0])
+                            xyxy = box.xyxy[0].cpu().numpy()
+
+                            if cls_name in self.noise_coco_classes and conf < 0.65:
+                                continue
+
+                            is_wildlife_target = (cls_name in self.ungulate_coco_classes) or (cls_name == self.target_animal)
+                            label_name = "DEER" if is_wildlife_target else cls_name.upper()
+
+                            bbox_h = max(float(xyxy[3] - xyxy[1]), 1.0)
+                            dist_m = round((self.focal_length_px * self.real_target_height_m) / bbox_h, 1)
+                            dist_m = min(max(dist_m, 0.8), 25.0)
+
+                            center_x = round(float((xyxy[0] + xyxy[2]) / 2.0), 1)
+                            center_y = round(float((xyxy[1] + xyxy[3]) / 2.0), 1)
+
+                            raw_detections.append({
+                                'class_name': label_name,
+                                'original_coco_class': cls_name,
+                                'is_target': is_wildlife_target,
+                                'confidence': conf,
+                                'distance_m': dist_m,
+                                'center': (center_x, center_y),
+                                'bbox': xyxy
+                            })
+
+                    inf_time = (time.time() - start_inf) * 1000
+                    with self.infer_lock:
+                        self.latest_raw_detections = raw_detections
+                        self.last_inf_time_ms = inf_time
+                except Exception as e:
+                    self.get_logger().error(f'Inference worker error: {e}')
+
+            time.sleep(0.005)
 
     def preprocess_for_camouflage(self, cv_image):
         """
@@ -163,60 +243,13 @@ class CamouflageDetectionNode(Node):
         h, w, _ = cv_image.shape
         annotated_image = cv_image.copy()
 
-        # Decide whether to run YOLO inference on this frame or reuse cached detections
-        # Running every 2nd frame cuts CPU usage by ~50% while maintaining smooth HUD
-        should_run_yolo = (self.frame_skip <= 0) or (self.inference_frame_idx % (self.frame_skip + 1) == 0)
+        # Non-blocking: Pass current frame to background inference worker and grab latest detections
+        with self.infer_lock:
+            self.latest_input_frame = cv_image
+            current_raw = list(self.latest_raw_detections)
 
-        if should_run_yolo and self.model is not None:
-            start_inf = time.time()
-
-            # 1. Preprocess frame with CLAHE texture-enhancement
-            processed_frame = self.preprocess_for_camouflage(cv_image)
-
-            # 2. Run inference
-            results = self.model(processed_frame, conf=self.conf_threshold, verbose=False)
-            raw_detections = []
-
-            for result in results:
-                boxes = result.boxes
-                for box in boxes:
-                    cls_id = int(box.cls[0])
-                    cls_name = self.model.names[cls_id].lower() if hasattr(self.model, 'names') else str(cls_id)
-                    conf = float(box.conf[0])
-                    xyxy = box.xyxy[0].cpu().numpy()
-
-                    # Filter out spurious false positives on foliage (e.g. tree branches labeled as 'bird')
-                    if cls_name in self.noise_coco_classes and conf < 0.65:
-                        continue
-
-                    # Intelligent Wildlife Semantic Mapping:
-                    # COCO lacks 'deer' class, so deer is classified as quadruped priors ('horse', 'sheep', etc.)
-                    is_wildlife_target = (cls_name in self.ungulate_coco_classes) or (cls_name == self.target_animal)
-                    label_name = "DEER" if is_wildlife_target else cls_name.upper()
-
-                    # Monocular distance estimation (meters)
-                    bbox_h = max(float(xyxy[3] - xyxy[1]), 1.0)
-                    dist_m = round((self.focal_length_px * self.real_target_height_m) / bbox_h, 1)
-                    dist_m = min(max(dist_m, 0.8), 25.0)
-
-                    center_x = round(float((xyxy[0] + xyxy[2]) / 2.0), 1)
-                    center_y = round(float((xyxy[1] + xyxy[3]) / 2.0), 1)
-
-                    raw_detections.append({
-                        'class_name': label_name,
-                        'original_coco_class': cls_name,
-                        'is_target': is_wildlife_target,
-                        'confidence': conf,
-                        'distance_m': dist_m,
-                        'center': (center_x, center_y),
-                        'bbox': xyxy
-                    })
-
-            self.last_inf_time_ms = (time.time() - start_inf) * 1000
-            # Apply Temporal Smoothing on bounding boxes to prevent jitter
-            self.last_smoothed_detections = self.smooth_predictions(raw_detections)
-
-        smoothed_detections = self.last_smoothed_detections
+        # Apply Temporal Smoothing on bounding boxes to prevent jitter
+        smoothed_detections = self.smooth_predictions(current_raw)
 
         # Draw annotations
         for det in smoothed_detections:
@@ -272,7 +305,15 @@ class CamouflageDetectionNode(Node):
         # Display live GUI feed window
         if self.show_window:
             cv2.imshow("Camouflage Animal Detection Feed", annotated_image)
-            cv2.waitKey(1)
+            key = cv2.waitKey(1) & 0xFF
+            try:
+                visible = cv2.getWindowProperty("Camouflage Animal Detection Feed", cv2.WND_PROP_VISIBLE)
+            except Exception:
+                visible = 0
+            if key in (27, ord('q')) or visible < 1:
+                self.get_logger().info("User closed camera window (pressed 'q'/ESC or clicked [X]).")
+                self.show_window = False
+                cv2.destroyAllWindows()
 
         # Find primary target for autonomous visual servoing
         targets = [d for d in smoothed_detections if d['is_target']]
@@ -386,6 +427,7 @@ class CamouflageDetectionNode(Node):
         cv2.drawMarker(img, (cx, cy), (0, 255, 255), markerType=cv2.MARKER_CROSS, markerSize=18, thickness=1)
 
     def destroy_node(self):
+        self.is_running = False
         if hasattr(self, 'show_window') and self.show_window:
             try:
                 cv2.destroyAllWindows()

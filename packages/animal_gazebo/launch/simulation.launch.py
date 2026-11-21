@@ -22,6 +22,12 @@ def generate_launch_description():
     seed = LaunchConfiguration('seed')
     density = LaunchConfiguration('density')
     num_deer = LaunchConfiguration('num_deer')
+    show_window = LaunchConfiguration('show_window')
+
+    declare_show_window_cmd = DeclareLaunchArgument(
+        'show_window',
+        default_value='true',
+        description='Set to "true" to display the live OpenCV detection window, "false" to suppress it')
 
     declare_gui_cmd = DeclareLaunchArgument(
         'gui',
@@ -81,6 +87,7 @@ def generate_launch_description():
         PythonLaunchDescriptionSource(
             os.path.join(pkg_animal_recognition, 'launch', 'recognition.launch.py'),
         ),
+        launch_arguments={'show_window': show_window}.items(),
         condition=IfCondition(recognition)
     )
 
@@ -100,6 +107,7 @@ def generate_launch_description():
         declare_seed_cmd,
         declare_density_cmd,
         declare_num_deer_cmd,
+        declare_show_window_cmd,
         start_world,
         spawn_robot,
         start_recognition,

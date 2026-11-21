@@ -17,9 +17,11 @@ import time
 import json
 import math
 import shutil
+import signal
 import logging
 import subprocess
 import threading
+import collections
 from flask import Flask, render_template, Response, request, jsonify
 
 import cv2
@@ -53,6 +55,22 @@ active_processes = {
     "patrol": None
 }
 
+# Real-time System Event Logs Buffer for Browser Mission Control Console
+# Using deque for thread-safe append/popleft without needing a lock for reads
+system_event_logs = collections.deque(maxlen=120)
+logs_lock = threading.RLock()   # RLock: re-entrant — safe if same thread acquires twice
+last_logged_state = {"fsm": None, "target": None, "teleop_time": 0.0}
+
+def add_system_log(level, message):
+    """Append a log entry. Safe to call from any thread, including while logs_lock is held."""
+    timestamp = time.strftime("%H:%M:%S")
+    entry = {"time": timestamp, "level": level, "msg": str(message)}
+    # deque.append is thread-safe in CPython (GIL); lock only needed for consistent snapshots
+    system_event_logs.append(entry)
+
+# Initial startup log
+add_system_log("SYSTEM", "Wildlife Camouflage Mission Control Dashboard Initialized.")
+
 # Check ROS 2 availability
 ROS_AVAILABLE = False
 try:
@@ -65,6 +83,10 @@ try:
     ROS_AVAILABLE = True
 except ImportError:
     ROS_AVAILABLE = False
+    Image = object
+    Twist = object
+    String = object
+    CvBridge = object
 
 
 # ==============================================================================
@@ -480,12 +502,35 @@ class DashboardROSNode:
                 pass
 
     def telemetry_callback(self, msg: String):
-        global latest_telemetry
+        global latest_telemetry, last_logged_state
         try:
             data = json.loads(msg.data)
             with state_lock:
                 latest_telemetry.update(data)
                 latest_telemetry["mode"] = "ROS2_GAZEBO"
+
+            # Log meaningful status transitions to browser terminal console
+            target_acq = data.get('target_acquired', False)
+            pt = data.get('primary_target')
+            fsm = data.get('fsm_state')
+
+            if target_acq and pt:
+                pt_id = f"{pt.get('label')}_{round(pt.get('distance_m', 0), 1)}"
+                if last_logged_state["target"] != pt_id:
+                    last_logged_state["target"] = pt_id
+                    conf = pt.get('confidence', 0) * 100
+                    dist = pt.get('distance_m', 0)
+                    add_system_log(
+                        "TARGET",
+                        f"🦌 TARGET ACQUIRED: {pt.get('label').upper()} spotted at {dist:.1f}m (Confidence: {conf:.1f}%)"
+                    )
+            elif not target_acq and last_logged_state["target"] is not None:
+                last_logged_state["target"] = None
+                add_system_log("PATROL", "Target obscured. Resuming sector search sweep.")
+
+            if fsm and fsm != last_logged_state["fsm"]:
+                last_logged_state["fsm"] = fsm
+                add_system_log("FSM", f"Autonomy State Transition -> [{fsm}]")
         except Exception:
             pass
 
@@ -606,14 +651,36 @@ def video_feed():
 @app.route('/api/telemetry', methods=['GET'])
 def get_telemetry():
     with state_lock:
-        return jsonify(latest_telemetry)
+        res = dict(latest_telemetry)
+    # Snapshot the deque — deque iteration is safe under GIL; no explicit lock needed
+    res["logs"] = list(system_event_logs)
+    return jsonify(res)
+
+
+@app.route('/api/logs/clear', methods=['POST'])
+def clear_logs():
+    system_event_logs.clear()
+    add_system_log("INFO", "Console logs cleared.")
+    return jsonify({"status": "cleared"})
 
 
 @app.route('/api/cmd_vel', methods=['POST'])
 def send_cmd_vel():
+    global last_logged_state
     data = request.get_json() or {}
     linear_x = float(data.get('linear_x', 0.0))
     angular_z = float(data.get('angular_z', 0.0))
+
+    now = time.time()
+    if (abs(linear_x) > 0.01 or abs(angular_z) > 0.01) and (now - last_logged_state["teleop_time"] > 2.5):
+        last_logged_state["teleop_time"] = now
+        direction = []
+        if linear_x > 0: direction.append("Forward")
+        elif linear_x < 0: direction.append("Reverse")
+        if angular_z > 0: direction.append("Turn Left")
+        elif angular_z < 0: direction.append("Turn Right")
+        dir_str = " + ".join(direction) if direction else "Steering"
+        add_system_log("TELEOP", f"Manual Driving: {dir_str} (lin={linear_x:.2f} m/s, ang={angular_z:.2f} rad/s)")
 
     # Pass to ROS 2 if available
     if ros_backend:
@@ -625,32 +692,78 @@ def send_cmd_vel():
     return jsonify({"status": "ok", "linear_x": linear_x, "angular_z": angular_z})
 
 
+def kill_process_tree(proc):
+    """Cleanly terminates a subprocess and all of its spawned child processes."""
+    if proc is None:
+        return
+    try:
+        if os.name != 'nt' and hasattr(os, 'killpg'):
+            os.killpg(os.getpgid(proc.pid), signal.SIGKILL)
+        else:
+            proc.kill()
+    except Exception:
+        try:
+            proc.kill()
+        except Exception:
+            pass
+
+
+def cleanup_simulation_subprocesses():
+    """Force-kills any orphan Gazebo and ROS 2 processes with SIGKILL to ensure clean restart."""
+    targets = ["gzserver", "gzclient", "ros_recognition_yolo", "autonomous_patrol", "spawn_entity", "robot_state_publisher"]
+    for target in targets:
+        try:
+            subprocess.run(["pkill", "-9", "-f", target], capture_output=True)
+        except Exception:
+            pass
+
+
 @app.route('/api/system/start', methods=['POST'])
 def start_simulation():
-    global active_processes
+    global active_processes, ros_backend
     data = request.get_json() or {}
     gui = "true" if data.get('gui', False) else "false"
 
     # Check if 'ros2' executable is available in PATH (Linux / Docker environment)
     ros2_path = shutil.which("ros2")
     if ros2_path is not None:
+        # Check if existing process is actually still alive
+        if active_processes["simulation"] is not None:
+            if active_processes["simulation"].poll() is not None:
+                active_processes["simulation"] = None
+
+        if active_processes["simulation"] is not None:
+            return jsonify({"status": "already_running", "message": "Simulation is already active."})
+
+        # Ensure any lingering Gazebo processes are completely cleared before launching
+        cleanup_simulation_subprocesses()
+        time.sleep(0.3)
+
         cmd = [
             ros2_path, "launch", "animal_gazebo", "simulation.launch.py",
-            f"gui:={gui}", "recognition:=true", "autonomous:=false"
+            f"gui:={gui}", "recognition:=true", "autonomous:=false", "show_window:=false"
         ]
         try:
-            if active_processes["simulation"] is None:
-                proc = subprocess.Popen(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-                active_processes["simulation"] = proc
-                print("\n[ACTION] Real ROS 2 + Gazebo Simulation launched successfully.\n")
-                return jsonify({"status": "started", "mode": "ros2_gazebo", "message": "ROS 2 & Gazebo Simulation Launched!"})
-            else:
-                return jsonify({"status": "already_running", "message": "Simulation is already active."})
+            popen_kwargs = {"stdout": subprocess.DEVNULL, "stderr": subprocess.DEVNULL}
+            if os.name != 'nt' and hasattr(os, 'setsid'):
+                popen_kwargs["preexec_fn"] = os.setsid
+
+            proc = subprocess.Popen(cmd, **popen_kwargs)
+            active_processes["simulation"] = proc
+
+            if ros_backend:
+                ros_backend.has_annotated = False
+
+            add_system_log("SYSTEM", f"ROS 2 & Gazebo Simulation launched (Headless: {gui != 'true'}).")
+            print("\n[ACTION] Real ROS 2 + Gazebo Simulation launched successfully.\n")
+            return jsonify({"status": "started", "mode": "ros2_gazebo", "message": "ROS 2 & Gazebo Simulation Launched!"})
         except Exception as e:
+            add_system_log("ERROR", f"Simulation launch failed: {e}")
             return jsonify({"status": "error", "message": f"ROS 2 launch failed: {e}"}), 500
     else:
         # Running natively on Windows without ROS 2: Launch Windows Interactive Simulator
         sim_engine.start()
+        add_system_log("SYSTEM", "Windows Native Interactive Simulation mode started.")
         return jsonify({
             "status": "started",
             "mode": "windows_simulation",
@@ -660,34 +773,25 @@ def start_simulation():
 
 @app.route('/api/system/stop', methods=['POST'])
 def stop_simulation():
-    global active_processes
+    global active_processes, ros_backend
 
     # 1. Stop Windows Simulation Engine
     sim_engine.stop()
 
-    # 2. Terminate ROS 2 processes if any
+    # 2. Terminate ROS 2 processes with process group SIGKILL
     if active_processes["patrol"]:
-        try:
-            active_processes["patrol"].terminate()
-            active_processes["patrol"] = None
-        except Exception:
-            pass
+        kill_process_tree(active_processes["patrol"])
+        active_processes["patrol"] = None
 
     if active_processes["simulation"]:
-        try:
-            active_processes["simulation"].terminate()
-            active_processes["simulation"] = None
-        except Exception:
-            pass
+        kill_process_tree(active_processes["simulation"])
+        active_processes["simulation"] = None
 
-    # Clean up gazebo/ROS 2 processes in background
-    try:
-        subprocess.run(["pkill", "-f", "gzserver"], capture_output=True)
-        subprocess.run(["pkill", "-f", "gzclient"], capture_output=True)
-        subprocess.run(["pkill", "-f", "ros_recognition_yolo"], capture_output=True)
-        subprocess.run(["pkill", "-f", "autonomous_patrol"], capture_output=True)
-    except Exception:
-        pass
+    # 3. Force kill any remaining Gazebo / ROS 2 nodes so ports are completely freed
+    cleanup_simulation_subprocesses()
+
+    if ros_backend:
+        ros_backend.has_annotated = False
 
     with frame_lock:
         global latest_frame
@@ -699,6 +803,7 @@ def stop_simulation():
         latest_telemetry["primary_target"] = None
         latest_telemetry["fps"] = 0.0
 
+    add_system_log("SYSTEM", "Simulation and Perception stopped. Switched to Standby Radar.")
     print("\n[ACTION] Simulation and Perception Stopped. System in Standby.\n")
     return jsonify({"status": "stopped", "message": "Simulation and perception stopped. Switched to Standby Radar."})
 
@@ -716,23 +821,32 @@ def toggle_autonomy():
     ros2_path = shutil.which("ros2")
     if ros2_path is not None:
         if active:
+            if active_processes["patrol"] is not None and active_processes["patrol"].poll() is not None:
+                active_processes["patrol"] = None
+
             if active_processes["patrol"] is None:
                 try:
+                    popen_kwargs = {"stdout": subprocess.DEVNULL, "stderr": subprocess.DEVNULL}
+                    if os.name != 'nt' and hasattr(os, 'setsid'):
+                        popen_kwargs["preexec_fn"] = os.setsid
                     proc = subprocess.Popen(
                         [ros2_path, "run", "animal_control", "autonomous_patrol.py"],
-                        stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
+                        **popen_kwargs
                     )
                     active_processes["patrol"] = proc
+                    add_system_log("AUTONOMY", "Autonomous Wildlife Patrol activated (Scan speed 0.58 rad/s).")
                     return jsonify({"status": "active", "message": "ROS 2 Autonomous Patrol node started."})
                 except Exception as e:
                     return jsonify({"status": "error", "message": str(e)}), 500
         else:
             if active_processes["patrol"]:
-                try:
-                    active_processes["patrol"].terminate()
-                    active_processes["patrol"] = None
-                except Exception:
-                    pass
+                kill_process_tree(active_processes["patrol"])
+                active_processes["patrol"] = None
+            try:
+                subprocess.run(["pkill", "-9", "-f", "autonomous_patrol"], capture_output=True)
+            except Exception:
+                pass
+            add_system_log("AUTONOMY", "Autonomous Patrol deactivated. Switched to Manual Steering.")
 
     status_msg = "Autonomous Wildlife Patrol Activated!" if active else "Switched to Manual Teleop (WASD active)."
     return jsonify({"status": "ok", "active": active, "message": status_msg})
@@ -767,10 +881,13 @@ def regenerate_world():
         ]
         try:
             subprocess.run(cmd, check=True)
+            add_system_log("WORLD", f"Procedural Arena Synthesized (Seed: {seed}, Density: {density}, Deer: {num_deer}).")
             return jsonify({"status": "success", "message": f"Procedural World synthesized with Seed {seed} ({density} density)!"})
-        except Exception:
+        except Exception as e:
+            add_system_log("ERROR", f"World generator failed: {e}")
             pass
 
+    add_system_log("WORLD", f"Procedural Arena Randomized (Seed: {seed}, Density: {density}).")
     return jsonify({"status": "success", "message": f"World randomized with Seed {seed} ({density} density)!"})
 
 
@@ -795,6 +912,7 @@ def capture_frame():
         filepath = os.path.join(save_dir, filename)
         cv2.imwrite(filepath, save_img)
         print(f"\n[SNAPSHOT] Saved camera frame to: {filepath}\n")
+        add_system_log("SNAPSHOT", f"Saved camera snapshot: {filename}")
         return jsonify({"status": "saved", "message": f"Snapshot saved: {filename}"})
     else:
         return jsonify({"status": "no_frame", "message": "No active camera frame available (Simulation in Standby)."})

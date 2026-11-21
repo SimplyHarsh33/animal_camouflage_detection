@@ -30,8 +30,8 @@ class AutonomousPatrolNode(Node):
         super().__init__('autonomous_patrol_node')
 
         # Parameters
-        self.declare_parameter('scan_speed', 0.32)       # rad/s for 360 scan
-        self.declare_parameter('forward_speed', 0.22)    # m/s for exploration
+        self.declare_parameter('scan_speed', 0.58)       # rad/s for 360 scan (optimized for responsive scanning)
+        self.declare_parameter('forward_speed', 0.24)    # m/s for exploration
         self.declare_parameter('stop_distance', 3.0)     # meters to hold inspection
         self.declare_parameter('auto_start', True)
 
@@ -116,7 +116,7 @@ class AutonomousPatrolNode(Node):
 
             # Proportional angular steering to keep target centered in FOV
             angular_z = float(self.kp_steer * error_x)
-            angular_z = max(min(angular_z, 0.45), -0.45)
+            angular_z = max(min(angular_z, 0.65), -0.65)
 
             # Approach or Hold Position
             if dist > self.stop_distance:
@@ -192,9 +192,9 @@ class AutonomousPatrolNode(Node):
         # STATE: TURN_BOUNCE (Turn Away from Inspected Target / Bounds)
         # ==========================================================
         if self.state == self.STATE_TURN_BOUNCE:
-            turn_duration = 3.5  # ~110-130° turn
+            turn_duration = 2.2  # ~120-130° turn at 0.65 rad/s
             if state_elapsed < turn_duration:
-                self.publish_cmd(0.0, 0.40)
+                self.publish_cmd(0.0, 0.65)
             else:
                 self.get_logger().info('Turn complete. Advancing to new patrol sector...')
                 self.state = self.STATE_EXPLORE_CREEP
