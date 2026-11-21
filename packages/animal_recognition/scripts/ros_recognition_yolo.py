@@ -133,8 +133,25 @@ class CamouflageDetectionNode(Node):
         # CLAHE local contrast enhancer (tuned to 4x4 tile grid for fur micro-contrast)
         self.clahe = cv2.createCLAHE(clipLimit=3.0, tileGridSize=(4, 4))
 
-        # Wildlife taxonomy mapping (COCO classes to Target Animal)
-        self.ungulate_coco_classes = {'horse', 'giraffe', 'cow', 'sheep', 'zebra', 'bear', 'deer', 'dog', 'elephant', 'cat'}
+        # Multi-Animal Camouflage Wildlife Taxonomy & Semantic Mapping
+        # Maps COCO / custom model class names to species label, icon, tactical color (BGR), reference height (m)
+        self.wildlife_taxonomy = {
+            'deer': {'label': 'DEER', 'icon': '🦌', 'color': (0, 255, 60), 'ref_h': 1.35},
+            'horse': {'label': 'DEER', 'icon': '🦌', 'color': (0, 255, 60), 'ref_h': 1.35},
+            'zebra': {'label': 'DEER', 'icon': '🦌', 'color': (0, 255, 60), 'ref_h': 1.35},
+            'cow': {'label': 'DEER', 'icon': '🦌', 'color': (0, 255, 60), 'ref_h': 1.35},
+            'sheep': {'label': 'DEER', 'icon': '🦌', 'color': (0, 255, 60), 'ref_h': 1.35},
+            'giraffe': {'label': 'DEER', 'icon': '🦌', 'color': (0, 255, 60), 'ref_h': 1.35},
+            'cat': {'label': 'LEOPARD', 'icon': '🐆', 'color': (30, 220, 255), 'ref_h': 0.85},
+            'leopard': {'label': 'LEOPARD', 'icon': '🐆', 'color': (30, 220, 255), 'ref_h': 0.85},
+            'cheetah': {'label': 'LEOPARD', 'icon': '🐆', 'color': (30, 220, 255), 'ref_h': 0.85},
+            'snake': {'label': 'SNAKE', 'icon': '🐍', 'color': (0, 140, 255), 'ref_h': 0.35},
+            'dog': {'label': 'FOX', 'icon': '🦊', 'color': (255, 180, 0), 'ref_h': 0.65},
+            'fox': {'label': 'FOX', 'icon': '🦊', 'color': (255, 180, 0), 'ref_h': 0.65},
+            'wolf': {'label': 'FOX', 'icon': '🦊', 'color': (255, 180, 0), 'ref_h': 0.65},
+            'rabbit': {'label': 'HARE', 'icon': '🐇', 'color': (200, 200, 50), 'ref_h': 0.40},
+            'bear': {'label': 'BEAR', 'icon': '🐻', 'color': (80, 127, 255), 'ref_h': 1.50},
+        }
         self.noise_coco_classes = {'bird', 'potted plant', 'kite', 'bench', 'chair', 'umbrella'}
 
         # Performance Architecture: Decoupled Asynchronous Inference Worker
@@ -182,12 +199,25 @@ class CamouflageDetectionNode(Node):
                             if cls_name in self.noise_coco_classes and conf < 0.65:
                                 continue
 
-                            is_wildlife_target = (cls_name in self.ungulate_coco_classes) or (cls_name == self.target_animal)
-                            label_name = "DEER" if is_wildlife_target else cls_name.upper()
+                            species_info = self.wildlife_taxonomy.get(cls_name)
+                            if species_info is None and cls_name == self.target_animal:
+                                species_info = {'label': self.target_animal.upper(), 'icon': '🐾', 'color': (0, 255, 60), 'ref_h': 1.0}
+
+                            is_wildlife_target = (species_info is not None)
+                            if is_wildlife_target:
+                                label_name = species_info['label']
+                                target_color = species_info['color']
+                                ref_h = species_info['ref_h']
+                                icon = species_info.get('icon', '🐾')
+                            else:
+                                label_name = cls_name.upper()
+                                target_color = (0, 165, 255)
+                                ref_h = 1.0
+                                icon = '🎯'
 
                             bbox_h = max(float(xyxy[3] - xyxy[1]), 1.0)
-                            dist_m = round((self.focal_length_px * self.real_target_height_m) / bbox_h, 1)
-                            dist_m = min(max(dist_m, 0.8), 25.0)
+                            dist_m = round((self.focal_length_px * ref_h) / bbox_h, 1)
+                            dist_m = min(max(dist_m, 0.8), 35.0)
 
                             center_x = round(float((xyxy[0] + xyxy[2]) / 2.0), 1)
                             center_y = round(float((xyxy[1] + xyxy[3]) / 2.0), 1)
@@ -199,7 +229,10 @@ class CamouflageDetectionNode(Node):
                                 'confidence': conf,
                                 'distance_m': dist_m,
                                 'center': (center_x, center_y),
-                                'bbox': xyxy
+                                'bbox': xyxy,
+                                'color': target_color,
+                                'icon': icon,
+                                'ref_h': ref_h
                             })
 
                     inf_time = (time.time() - start_inf) * 1000
@@ -259,8 +292,8 @@ class CamouflageDetectionNode(Node):
             name = det['class_name']
             dist_m = det.get('distance_m', 0.0)
 
-            # Box styling: green for target deer, orange for others
-            box_color = (0, 255, 60) if is_target else (0, 165, 255)
+            # Box styling: species-specific tactical color
+            box_color = det.get('color', (0, 255, 60) if is_target else (0, 165, 255))
             cv2.rectangle(annotated_image, (x1, y1), (x2, y2), box_color, 2)
 
             # Corner brackets for tactical look
@@ -274,18 +307,17 @@ class CamouflageDetectionNode(Node):
             cv2.line(annotated_image, (x2, y2), (x2 - line_len, y2), box_color, 3)
             cv2.line(annotated_image, (x2, y2), (x2, y2 - line_len), box_color, 3)
 
-            # Label banner with distance
-            prefix = "🦌 " if is_target else ""
+            # Label banner with distance (ASCII safe for OpenCV)
             dist_str = f" | {dist_m:.1f}m" if dist_m > 0 else ""
-            label = f"{prefix}{name} {conf*100:.1f}%{dist_str}"
-            (lbl_w, lbl_h), _ = cv2.getTextSize(label, cv2.FONT_HERSHEY_SIMPLEX, 0.50, 1)
+            label = f"[{name}] {conf*100:.1f}%{dist_str}"
+            (lbl_w, lbl_h), _ = cv2.getTextSize(label, cv2.FONT_HERSHEY_SIMPLEX, 0.48, 1)
             cv2.rectangle(annotated_image, (x1, y1 - 22), (x1 + lbl_w + 8, y1), box_color, -1)
             cv2.putText(
                 annotated_image,
                 label,
                 (x1 + 4, y1 - 6),
                 cv2.FONT_HERSHEY_SIMPLEX,
-                0.50,
+                0.48,
                 (0, 0, 0),
                 2,
                 cv2.LINE_AA
@@ -339,9 +371,22 @@ class CamouflageDetectionNode(Node):
             'target_acquired': len(targets) > 0,
             'target_count': len(targets),
             'primary_target': primary_target,
+            'targets': [
+                {
+                    'species': d['class_name'],
+                    'label': d['class_name'],
+                    'icon': d.get('icon', '🐾'),
+                    'confidence': round(d['confidence'], 3),
+                    'distance_m': d.get('distance_m', 0.0),
+                    'center_x': d['center'][0],
+                    'center_y': d['center'][1],
+                    'bbox': [int(v) for v in d['bbox']]
+                } for d in targets
+            ],
             'detections': [
                 {
                     'label': d['class_name'],
+                    'icon': d.get('icon', '🐾'),
                     'confidence': round(d['confidence'], 3),
                     'distance_m': d.get('distance_m', 0.0),
                     'center_x': d['center'][0],
@@ -375,7 +420,8 @@ class CamouflageDetectionNode(Node):
                     det['confidence'] = round(float(self.smooth_alpha * det['confidence'] + (1.0 - self.smooth_alpha) * prev['confidence']), 3)
                     # Recalculate distance and center from smoothed box
                     bbox_h = max(float(smooth_box[3] - smooth_box[1]), 1.0)
-                    det['distance_m'] = round(min(max((self.focal_length_px * self.real_target_height_m) / bbox_h, 0.8), 25.0), 1)
+                    ref_h = det.get('ref_h', self.real_target_height_m)
+                    det['distance_m'] = round(min(max((self.focal_length_px * ref_h) / bbox_h, 0.8), 35.0), 1)
                     det['center'] = (
                         round(float((smooth_box[0] + smooth_box[2]) / 2.0), 1),
                         round(float((smooth_box[1] + smooth_box[3]) / 2.0), 1)
@@ -412,7 +458,7 @@ class CamouflageDetectionNode(Node):
         if len(targets) > 0:
             nearest = min(targets, key=lambda d: d.get('distance_m', 99.0))
             dist_val = nearest.get('distance_m', 0.0)
-            status_text = f"🦌 TARGET ACQUIRED: {len(targets)} | DIST: ~{dist_val:.1f}m"
+            status_text = f"MULTI-TARGET LOCK: {len(targets)} WILDLIFE | NEAREST: ~{dist_val:.1f}m"
             status_color = (0, 255, 60)
         else:
             status_text = "SCANNING FOR CAMOUFLAGED WILDLIFE..."

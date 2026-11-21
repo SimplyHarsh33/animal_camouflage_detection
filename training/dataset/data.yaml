@@ -5,3 +5,6 @@ val: images/val
 
 names:
   0: deer
+  1: leopard
+  2: snake
+  3: fox
