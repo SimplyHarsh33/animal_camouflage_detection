@@ -537,12 +537,12 @@
           </div>
 
           <div class="input-group">
-            <label>Number of Deer</label>
-            <select id="world-deer-count">
-              <option value="1">1 Deer Target</option>
-              <option value="2">2 Deer Targets</option>
-              <option value="3" selected>3 Deer Targets</option>
-              <option value="4">4 Deer Targets</option>
+            <label>Wildlife Biome Mode</label>
+            <select id="world-biome-type">
+              <option value="mixed" selected>Mixed Jungle (Deer, Leopard, Snake, Fox)</option>
+              <option value="predator">Predators Focus (Leopard & Fox)</option>
+              <option value="herbivore">Herbivore Sanctuary (Deer Herd)</option>
+              <option value="dense">Deep Canopy Camouflage</option>
             </select>
           </div>
 
@@ -589,6 +589,17 @@
           <div class="metric-box">
             <div class="metric-label">Camera Frame Rate</div>
             <div class="metric-value" id="val-fps">18.5 FPS</div>
+          </div>
+        </div>
+
+        <!-- Multi-Target Camouflage Breakdown List -->
+        <div style="background: rgba(15, 23, 42, 0.6); border: 1px solid var(--card-border); border-radius: 8px; padding: 12px; margin-bottom: 14px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+            <span style="font-size: 11px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px;">Active Camouflage Targets</span>
+            <span id="val-target-count-badge" style="font-size: 10px; font-weight: 700; background: rgba(56, 189, 248, 0.15); color: #38bdf8; padding: 2px 8px; border-radius: 10px; border: 1px solid rgba(56, 189, 248, 0.3);">0 In View</span>
+          </div>
+          <div id="target-breakdown-list" style="display: flex; flex-direction: column; gap: 6px; font-size: 11.5px; max-height: 150px; overflow-y: auto;">
+            <div style="color: #64748b; font-size: 11px; text-align: center; padding: 6px 0;">Searching for camouflaged wildlife...</div>
           </div>
         </div>
 
@@ -921,14 +932,14 @@
     // Regenerate World
     function regenerateWorld() {
       const density = document.getElementById('world-density').value;
-      const deerCount = document.getElementById('world-deer-count').value;
-      const seed = document.getElementById('world-seed').value;
+      const biome = document.getElementById('world-biome-type').value;
+      const seed = document.getElementById('world-seed').value || "42";
 
-      showToast(`Generating procedural forest with Seed ${seed}...`);
+      showToast(`Synthesizing ${biome} biome with Seed ${seed}...`);
       fetch('/api/system/regenerate_world', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ density: density, num_deer: deerCount, seed: seed })
+        body: JSON.stringify({ density: density, biome: biome, num_deer: 3, seed: seed })
       })
       .then(res => res.json())
       .then(data => showToast(data.message));
@@ -960,25 +971,73 @@
         }
 
         // Targets
+        const targetList = data.targets || [];
+        const targetCount = data.target_count || (data.target_acquired ? 1 : 0);
+        const countBadge = document.getElementById('val-target-count-badge');
+        const breakdownList = document.getElementById('target-breakdown-list');
+
+        if (countBadge) {
+          countBadge.innerText = `${targetCount} In View`;
+          countBadge.style.color = targetCount > 0 ? '#34d399' : '#94a3b8';
+          countBadge.style.borderColor = targetCount > 0 ? 'rgba(52, 211, 153, 0.4)' : 'rgba(148, 163, 184, 0.2)';
+        }
+
         if (data.target_acquired && data.primary_target) {
           const pt = data.primary_target;
-          document.getElementById('val-target-name').innerText = pt.label || "DEER";
-          document.getElementById('val-target-name').style.color = "#34d399";
+          
+          if (targetCount > 1) {
+            document.getElementById('val-target-name').innerText = `${targetCount} IN FRAME`;
+            document.getElementById('val-target-name').style.color = "#34d399";
+            document.getElementById('hud-target-pill').innerText = `🎯 MULTI-TARGET LOCK: ${targetCount} ANIMALS`;
+          } else {
+            document.getElementById('val-target-name').innerText = pt.label || "DEER";
+            document.getElementById('val-target-name').style.color = "#34d399";
+            document.getElementById('hud-target-pill').innerText = `${pt.icon || '🎯'} TARGET ACQUIRED: ${pt.label}`;
+          }
+
           document.getElementById('val-distance').innerText = `${pt.distance_m.toFixed(1)} m`;
           document.getElementById('val-confidence').innerText = `${(pt.confidence * 100).toFixed(1)}%`;
-
-          document.getElementById('hud-target-pill').innerText = `🦌 TARGET ACQUIRED: ${pt.label}`;
           document.getElementById('hud-target-pill').classList.remove('scanning');
-          document.getElementById('hud-dist-pill').innerText = `EST. DISTANCE: ${pt.distance_m.toFixed(1)}m`;
+          document.getElementById('hud-dist-pill').innerText = `CLOSEST: ${pt.distance_m.toFixed(1)}m`;
+
+          // Populate Multi-Target Breakdown List
+          if (breakdownList) {
+            if (targetList.length > 0) {
+              breakdownList.innerHTML = targetList.map(t => {
+                const confPct = Math.round(t.confidence * 100);
+                const icon = t.icon || '🎯';
+                const col = t.species === 'DEER' ? '#34d399' : (t.species === 'LEOPARD' ? '#fb923c' : (t.species === 'SNAKE' ? '#facc15' : '#f87171'));
+                return `
+                  <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(30, 41, 59, 0.7); border: 1px solid rgba(255,255,255,0.06); padding: 5px 8px; border-radius: 6px;">
+                    <div style="display: flex; align-items: center; gap: 6px;">
+                      <span>${icon}</span>
+                      <strong style="color: ${col}; font-size: 11px;">${t.label}</strong>
+                      <span style="font-size: 9.5px; color: #94a3b8; background: rgba(255,255,255,0.05); padding: 1px 5px; border-radius: 4px;">${t.camouflage_type || 'Camouflage'}</span>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                      <span style="color: #38bdf8; font-weight: 600; font-size: 11px;">${confPct}%</span>
+                      <span style="color: #94a3b8; font-size: 10px;">${t.distance_m.toFixed(1)}m</span>
+                    </div>
+                  </div>
+                `;
+              }).join('');
+            } else {
+              breakdownList.innerHTML = `<div style="color: #94a3b8; font-size: 11px; padding: 4px;">1 target tracked (${pt.label})</div>`;
+            }
+          }
         } else {
           document.getElementById('val-target-name').innerText = "NONE";
           document.getElementById('val-target-name').style.color = "#94a3b8";
           document.getElementById('val-distance').innerText = "--";
           document.getElementById('val-confidence').innerText = "--";
 
-          document.getElementById('hud-target-pill').innerText = "SCANNING SECTOR...";
+          document.getElementById('hud-target-pill').innerText = "🔍 SCANNING SECTOR FOR WILDLIFE...";
           document.getElementById('hud-target-pill').classList.add('scanning');
           document.getElementById('hud-dist-pill').innerText = "SEARCHING...";
+
+          if (breakdownList) {
+            breakdownList.innerHTML = '<div style="color: #64748b; font-size: 11px; text-align: center; padding: 6px 0;">Searching for camouflaged wildlife...</div>';
+          }
         }
 
         // FSM State
