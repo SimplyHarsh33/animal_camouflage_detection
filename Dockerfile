@@ -11,6 +11,7 @@ RUN apt-get update && apt-get install -y \
     ros-humble-joy \
     ros-humble-robot-state-publisher \
     ros-humble-xacro \
+    ros-humble-teleop-twist-keyboard \
     python3-pip \
     python3-opencv \
     && rm -rf /var/lib/apt/lists/*

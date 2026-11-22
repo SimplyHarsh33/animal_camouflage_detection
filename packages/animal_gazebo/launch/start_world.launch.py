@@ -25,7 +25,11 @@ def launch_setup(context, *args, **kwargs):
     if random_world_str.lower() in ['true', '1'] or seed_str.strip() != '':
         gen_script = os.path.join(pkg_animal_gazebo, 'scripts', 'generate_random_world.py')
         if not os.path.exists(gen_script):
-            gen_script = os.path.join('/workspace/packages/animal_gazebo/scripts/generate_random_world.py')
+            candidate = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'scripts', 'generate_random_world.py')
+            if os.path.exists(candidate):
+                gen_script = candidate
+            elif os.path.exists('/workspace/packages/animal_gazebo/scripts/generate_random_world.py'):
+                gen_script = '/workspace/packages/animal_gazebo/scripts/generate_random_world.py'
 
         cmd = [sys.executable, gen_script, '--output', world_path]
         if seed_str.strip() != '':

@@ -121,10 +121,19 @@ class VirtualForestSimulation:
         self.leopard_x = -3.8
         self.leopard_y = 7.5
         
-        # Trees
+        # Dense Jungle Trees Distribution (Covering foreground occlusion, midground grove & deep canopy)
         self.trees = [
-            (-2.5, 4.0), (2.8, 4.8), (-4.0, 7.0), (3.5, 8.5),
-            (-1.5, 9.5), (2.0, 11.0), (-3.5, 12.0), (4.0, 13.5)
+            # Foreground cover occluding the deer (depth 3.2m - 4.5m)
+            (-0.6, 4.0), (0.9, 4.4), (2.2, 3.8), (-1.8, 3.6),
+            # Midground dense grove (depth 4.8m - 7.5m)
+            (-2.5, 5.5), (2.8, 5.2), (-3.8, 6.8), (3.6, 7.2),
+            (-0.8, 6.5), (1.5, 7.0), (-2.2, 7.8), (2.4, 8.2),
+            # Deep canopy woodland (depth 8.5m - 14m)
+            (-4.2, 9.0), (3.8, 9.5), (-1.5, 10.2), (1.8, 10.8),
+            (-3.5, 11.5), (3.2, 12.0), (-2.0, 12.8), (2.5, 13.2),
+            (-4.5, 13.8), (4.2, 14.0), (0.2, 11.2), (-0.5, 13.5),
+            # Perimeter border barrier trees
+            (-5.5, 6.0), (5.5, 6.5), (-5.8, 10.0), (5.8, 10.5)
         ]
         
         # Pre-render deer texture patch & mask
@@ -287,13 +296,14 @@ class VirtualForestSimulation:
             b = int(25 + 15 * factor)
             frame[y, :] = (b, g, r)
 
-        # 2. Forest Floor Ground Plane
+        # 2. Forest Floor Ground Plane (Rich Woodland Camouflage Palette)
         horizon_y = 210
         for y in range(horizon_y, h):
             depth_f = (y - horizon_y) / float(h - horizon_y)
-            r = int(20 + 30 * depth_f)
-            g = int(35 + 40 * depth_f)
-            b = int(15 + 20 * depth_f)
+            # Woodland forest floor: rich loam brown with moss & fallen needle undertones
+            r = int(32 + 34 * depth_f)
+            g = int(36 + 32 * depth_f)
+            b = int(20 + 20 * depth_f)
             frame[y, :] = (b, g, r)
 
         # Moving perspective ground lines (shift as robot moves)
@@ -302,7 +312,7 @@ class VirtualForestSimulation:
             curr_gy = gy + grid_offset_y
             if curr_gy < h:
                 alpha = (curr_gy - horizon_y) / float(h - horizon_y)
-                color = (int(25 + 20 * alpha), int(45 + 30 * alpha), int(20 + 15 * alpha))
+                color = (int(28 + 18 * alpha), int(42 + 25 * alpha), int(38 + 22 * alpha))
                 cv2.line(frame, (0, curr_gy), (w, curr_gy), color, 1)
 
         # Perspective radial lines
@@ -310,39 +320,39 @@ class VirtualForestSimulation:
         for gx in range(-w, w * 2, 80):
             screen_gx = int(gx + yaw_offset)
             if -100 < screen_gx < w + 100:
-                cv2.line(frame, (screen_gx, horizon_y), (int(320 + (screen_gx - 320) * 2.8), h), (25, 45, 20), 1)
+                cv2.line(frame, (screen_gx, horizon_y), (int(320 + (screen_gx - 320) * 2.8), h), (26, 40, 36), 1)
 
-        # 3. Background Trees
+        # 3. Depth-Sorted Rendering Queue (Painter's Algorithm for Natural Tree Occlusion)
+        render_queue = []
+
+        # Project Dense Jungle Trees
         for tx, ty in self.trees:
             tdx = tx - self.rx
             tdy = ty - self.ry
             tz = -tdx * math.sin(self.yaw) + tdy * math.cos(self.yaw)
             tx_local = tdx * math.cos(self.yaw) + tdy * math.sin(self.yaw)
 
-            if tz > 1.2:
+            if tz > 1.0:
                 f_proj = 320.0
                 scx = int(320 + (tx_local / tz) * f_proj)
-                tree_h = int((3.5 / tz) * f_proj)
-                tree_w = int(tree_h * 0.45)
+                tree_h = int((3.6 / tz) * f_proj)
+                tree_w = int(tree_h * 0.48)
                 base_y = int(horizon_y + (0.5 / tz) * f_proj)
 
-                if -100 < scx < w + 100 and tree_h > 15:
-                    # Trunk
-                    trunk_w = max(4, tree_w // 4)
-                    cv2.rectangle(frame, (scx - trunk_w // 2, base_y - tree_h // 2),
-                                  (scx + trunk_w // 2, base_y), (15, 25, 35), -1)
-                    # Canopy
-                    canopy_r = max(10, tree_w)
-                    cv2.circle(frame, (scx, max(30, base_y - tree_h + canopy_r // 2)),
-                               canopy_r, (20, 40, 25), -1)
+                if -120 < scx < w + 120 and tree_h > 15:
+                    render_queue.append({
+                        'kind': 'tree',
+                        'depth': tz,
+                        'scx': scx,
+                        'tree_h': tree_h,
+                        'tree_w': tree_w,
+                        'base_y': base_y
+                    })
 
-        # 4. Camouflaged Deer Object Projection
+        # Project Camouflaged Deer
         dx = self.deer_x - self.rx
         dy = self.deer_y - self.ry
         target_dist = math.sqrt(dx * dx + dy * dy)
-        
-        # Local forward (z) and lateral (x) coordinates relative to robot camera
-        # w > 0 turns Left (yaw increases), w < 0 turns Right (yaw decreases)
         rel_forward = -dx * math.sin(self.yaw) + dy * math.cos(self.yaw)
         rel_lateral = dx * math.cos(self.yaw) + dy * math.sin(self.yaw)
 
@@ -357,7 +367,6 @@ class VirtualForestSimulation:
             sprite_h = int((1.10 / rel_forward) * focal_len)
 
             if 20 < screen_cx < (w - 20) and sprite_w > 12 and sprite_h > 12:
-                # Blit textured deer onto camera view
                 x1 = max(0, screen_cx - sprite_w // 2)
                 y1 = max(0, screen_cy - sprite_h)
                 x2 = min(w, x1 + sprite_w)
@@ -366,57 +375,98 @@ class VirtualForestSimulation:
                 actual_h = y2 - y1
 
                 if actual_w > 5 and actual_h > 5:
-                    deer_resized = cv2.resize(self.deer_sprite, (actual_w, actual_h))
-                    mask_resized = cv2.resize(self.deer_mask, (actual_w, actual_h))
-                    inv_mask = cv2.bitwise_not(mask_resized)
+                    render_queue.append({
+                        'kind': 'deer',
+                        'depth': rel_forward,
+                        'screen_cx': screen_cx,
+                        'screen_cy': screen_cy,
+                        'x1': x1, 'y1': y1, 'x2': x2, 'y2': y2,
+                        'actual_w': actual_w, 'actual_h': actual_h,
+                        'target_dist': target_dist
+                    })
 
-                    roi = frame[y1:y2, x1:x2]
-                    bg = cv2.bitwise_and(roi, roi, mask=inv_mask)
-                    fg = cv2.bitwise_and(deer_resized, deer_resized, mask=mask_resized)
-                    frame[y1:y2, x1:x2] = cv2.add(bg, fg)
+        # Sort all objects from furthest to closest (descending depth)
+        render_queue.sort(key=lambda obj: obj['depth'], reverse=True)
 
-                    # 5. Tactical AI Perception Bounding Box & HUD Lock
-                    target_detected = True
-                    conf = max(0.55, min(0.94, 0.92 - (target_dist * 0.035)))
+        # Render entities in depth-sorted order
+        for entity in render_queue:
+            if entity['kind'] == 'tree':
+                scx = entity['scx']
+                tree_h = entity['tree_h']
+                tree_w = entity['tree_w']
+                base_y = entity['base_y']
 
-                    # Tactical Neon Green Bounding Box
-                    box_color = (0, 255, 128)
-                    cv2.rectangle(frame, (x1 - 4, y1 - 4), (x2 + 4, y2 + 4), box_color, 2)
+                # Realistic woodland trunk (bark brown)
+                trunk_w = max(5, tree_w // 4)
+                cv2.rectangle(frame, (scx - trunk_w // 2, base_y - tree_h // 2),
+                              (scx + trunk_w // 2, base_y), (22, 38, 52), -1)
 
-                    # Reticle Corner Brackets
-                    bracket_len = max(8, min(20, actual_w // 4))
-                    # Top-left
-                    cv2.line(frame, (x1 - 4, y1 - 4), (x1 - 4 + bracket_len, y1 - 4), (255, 255, 255), 2)
-                    cv2.line(frame, (x1 - 4, y1 - 4), (x1 - 4, y1 - 4 + bracket_len), (255, 255, 255), 2)
-                    # Top-right
-                    cv2.line(frame, (x2 + 4, y1 - 4), (x2 + 4 - bracket_len, y1 - 4), (255, 255, 255), 2)
-                    cv2.line(frame, (x2 + 4, y1 - 4), (x2 + 4, y1 - 4 + bracket_len), (255, 255, 255), 2)
-                    # Bottom-left
-                    cv2.line(frame, (x1 - 4, y2 + 4), (x1 - 4 + bracket_len, y2 + 4), (255, 255, 255), 2)
-                    cv2.line(frame, (x1 - 4, y2 + 4), (x1 - 4, y2 + 4 - bracket_len), (255, 255, 255), 2)
-                    # Bottom-right
-                    cv2.line(frame, (x2 + 4, y2 + 4), (x2 + 4 - bracket_len, y2 + 4), (255, 255, 255), 2)
-                    cv2.line(frame, (x2 + 4, y2 + 4), (x2 + 4, y2 + 4 - bracket_len), (255, 255, 255), 2)
+                # Foliage / Canopy layers (deep forest greens)
+                canopy_r = max(12, tree_w)
+                canopy_cy = max(30, base_y - tree_h + canopy_r // 2)
+                cv2.circle(frame, (scx, canopy_cy), canopy_r, (18, 48, 28), -1)
+                cv2.circle(frame, (scx - canopy_r // 3, canopy_cy - canopy_r // 4),
+                           int(canopy_r * 0.72), (24, 62, 36), -1)
+                cv2.circle(frame, (scx + canopy_r // 3, canopy_cy - canopy_r // 4),
+                           int(canopy_r * 0.68), (20, 54, 30), -1)
 
-                    # Center crosshair
-                    ccx, ccy = (x1 + x2) // 2, (y1 + y2) // 2
-                    cv2.line(frame, (ccx - 8, ccy), (ccx + 8, ccy), (0, 255, 128), 1)
-                    cv2.line(frame, (ccx, ccy - 8), (ccx, ccy + 8), (0, 255, 128), 1)
+            elif entity['kind'] == 'deer':
+                x1, y1, x2, y2 = entity['x1'], entity['y1'], entity['x2'], entity['y2']
+                actual_w, actual_h = entity['actual_w'], entity['actual_h']
+                screen_cx, screen_cy = entity['screen_cx'], entity['screen_cy']
+                target_dist = entity['target_dist']
 
-                    # Bounding Box Label
-                    label_str = f"DEER {int(conf * 100)}% [{target_dist:.1f}m]"
-                    (tw, th), _ = cv2.getTextSize(label_str, cv2.FONT_HERSHEY_SIMPLEX, 0.48, 1)
-                    cv2.rectangle(frame, (x1 - 4, max(18, y1 - 22)), (x1 + tw + 6, max(22, y1 - 2)), (0, 180, 80), -1)
-                    cv2.putText(frame, label_str, (x1 - 1, max(16, y1 - 7)),
-                                cv2.FONT_HERSHEY_SIMPLEX, 0.48, (0, 0, 0), 1, cv2.LINE_AA)
+                deer_resized = cv2.resize(self.deer_sprite, (actual_w, actual_h))
+                mask_resized = cv2.resize(self.deer_mask, (actual_w, actual_h))
+                inv_mask = cv2.bitwise_not(mask_resized)
 
-                    target_info = {
-                        "label": "DEER",
-                        "confidence": float(round(conf, 3)),
-                        "distance_m": float(round(target_dist, 2)),
-                        "center_x": float(screen_cx),
-                        "center_y": float(screen_cy)
-                    }
+                roi = frame[y1:y2, x1:x2]
+                bg = cv2.bitwise_and(roi, roi, mask=inv_mask)
+                fg = cv2.bitwise_and(deer_resized, deer_resized, mask=mask_resized)
+                frame[y1:y2, x1:x2] = cv2.add(bg, fg)
+
+                # 4. Tactical AI Perception Bounding Box & HUD Lock
+                target_detected = True
+                conf = max(0.50, min(0.92, 0.88 - (target_dist * 0.038)))
+
+                # Tactical Neon Green Bounding Box
+                box_color = (0, 255, 128)
+                cv2.rectangle(frame, (x1 - 4, y1 - 4), (x2 + 4, y2 + 4), box_color, 2)
+
+                # Reticle Corner Brackets
+                bracket_len = max(8, min(20, actual_w // 4))
+                # Top-left
+                cv2.line(frame, (x1 - 4, y1 - 4), (x1 - 4 + bracket_len, y1 - 4), (255, 255, 255), 2)
+                cv2.line(frame, (x1 - 4, y1 - 4), (x1 - 4, y1 - 4 + bracket_len), (255, 255, 255), 2)
+                # Top-right
+                cv2.line(frame, (x2 + 4, y1 - 4), (x2 + 4 - bracket_len, y1 - 4), (255, 255, 255), 2)
+                cv2.line(frame, (x2 + 4, y1 - 4), (x2 + 4, y1 - 4 + bracket_len), (255, 255, 255), 2)
+                # Bottom-left
+                cv2.line(frame, (x1 - 4, y2 + 4), (x1 - 4 + bracket_len, y2 + 4), (255, 255, 255), 2)
+                cv2.line(frame, (x1 - 4, y2 + 4), (x1 - 4, y2 + 4 - bracket_len), (255, 255, 255), 2)
+                # Bottom-right
+                cv2.line(frame, (x2 + 4, y2 + 4), (x2 + 4 - bracket_len, y2 + 4), (255, 255, 255), 2)
+                cv2.line(frame, (x2 + 4, y2 + 4), (x2 + 4, y2 + 4 - bracket_len), (255, 255, 255), 2)
+
+                # Center crosshair
+                ccx, ccy = (x1 + x2) // 2, (y1 + y2) // 2
+                cv2.line(frame, (ccx - 8, ccy), (ccx + 8, ccy), (0, 255, 128), 1)
+                cv2.line(frame, (ccx, ccy - 8), (ccx, ccy + 8), (0, 255, 128), 1)
+
+                # Bounding Box Label
+                label_str = f"DEER {int(conf * 100)}% [{target_dist:.1f}m]"
+                (tw, th), _ = cv2.getTextSize(label_str, cv2.FONT_HERSHEY_SIMPLEX, 0.48, 1)
+                cv2.rectangle(frame, (x1 - 4, max(18, y1 - 22)), (x1 + tw + 6, max(22, y1 - 2)), (0, 180, 80), -1)
+                cv2.putText(frame, label_str, (x1 - 1, max(16, y1 - 7)),
+                            cv2.FONT_HERSHEY_SIMPLEX, 0.48, (0, 0, 0), 1, cv2.LINE_AA)
+
+                target_info = {
+                    "label": "DEER",
+                    "confidence": float(round(conf, 3)),
+                    "distance_m": float(round(target_dist, 2)),
+                    "center_x": float(screen_cx),
+                    "center_y": float(screen_cy)
+                }
 
         # 6. Compass Heading Tape (Tactical HUD Overlay)
         heading_deg = int((-self.yaw * 180.0 / math.pi) % 360)

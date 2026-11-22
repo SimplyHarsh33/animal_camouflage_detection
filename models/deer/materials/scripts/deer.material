@@ -4,9 +4,9 @@ material Animal/Deer
   {
     pass
     {
-      ambient 0.90 0.90 0.90 1.0
-      diffuse 1.0 1.0 1.0 1.0
-      specular 0.05 0.05 0.05 1.0 8.0
+      ambient 0.48 0.48 0.44 1.0
+      diffuse 0.82 0.82 0.78 1.0
+      specular 0.02 0.02 0.02 1.0 4.0
 
       texture_unit
       {

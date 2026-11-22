@@ -1,0 +1,18 @@
+material GroundPlane/ForestFloor
+{
+  technique
+  {
+    pass
+    {
+      ambient 0.55 0.55 0.50 1.0
+      diffuse 0.80 0.80 0.75 1.0
+      specular 0.02 0.02 0.02 1.0 2.0
+
+      texture_unit
+      {
+        texture forest_floor.jpg
+        scale 0.12 0.12
+      }
+    }
+  }
+}

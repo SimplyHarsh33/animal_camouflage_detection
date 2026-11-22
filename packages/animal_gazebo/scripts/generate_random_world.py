@@ -42,11 +42,11 @@ class ProceduralWorldGenerator:
         # Safety radius around robot spawn (0, 0)
         self.spawn_clearance_radius = 2.0
 
-        # Density configs (trees, rocks) - tuned for laptop CPU performance
+        # Density configs (trees, rocks) - tuned for dense woodland canopy
         density_map = {
-            "low": {"trees": 8, "rocks": 6},
-            "medium": {"trees": 15, "rocks": 10},
-            "high": {"trees": 24, "rocks": 16},
+            "low": {"trees": 20, "rocks": 14},
+            "medium": {"trees": 36, "rocks": 24},
+            "high": {"trees": 54, "rocks": 36},
         }
         self.tree_count = density_map[density]["trees"]
         self.rock_count = density_map[density]["rocks"]
@@ -70,6 +70,29 @@ class ProceduralWorldGenerator:
         # 3. Check overlap with existing placed objects
         for ox, oy, oradius, _ in self.placed_objects:
             if self.distance((x, y), (ox, oy)) < (radius + oradius):
+                return False
+
+        return True
+
+    def is_valid_cover_position(self, cx, cy, radius, deer_x, deer_y):
+        # 1. Check inside arena boundaries
+        if abs(cx) > (self.half_size - 1.0) or abs(cy) > (self.half_size - 1.0):
+            return False
+
+        # 2. Check robot spawn clearance
+        if self.distance((cx, cy), (0.0, 0.0)) < 2.0:
+            return False
+
+        # 3. Proximity to target deer: close enough to partially occlude (1.05m - 1.85m) without mesh collision
+        d_deer = self.distance((cx, cy), (deer_x, deer_y))
+        if d_deer < 1.05 or d_deer > 1.85:
+            return False
+
+        # 4. Check overlap with other objects (excluding target deer)
+        for ox, oy, oradius, oname in self.placed_objects:
+            if "deer" in oname:
+                continue
+            if self.distance((cx, cy), (ox, oy)) < (radius + oradius):
                 return False
 
         return True
@@ -112,7 +135,7 @@ class ProceduralWorldGenerator:
 
         # 1. Build Perimeter Trees to visually enclose the sanctuary
         if self.perimeter:
-            step = 3.2
+            step = 2.4
             wall_dist = self.half_size
             perimeter_idx = 0
             # North and South walls
@@ -155,17 +178,34 @@ class ProceduralWorldGenerator:
                     deer_model = self.place_object(f"deer_{label.lower()}_{i+1}", "model://deer", dx, dy, deer_yaw, radius=0.9)
                     models.append(deer_model)
 
-                    # Add strategic camouflage cover near the deer (rock or tree)
-                    cover_type = self.rng.choice(["rock", "oak_tree", "pine_tree"])
-                    cover_dist = self.rng.uniform(0.6, 1.2)
-                    cover_angle = angle + self.rng.uniform(-0.5, 0.5)
-                    cx = dx + cover_dist * math.cos(cover_angle)
-                    cy = dy + cover_dist * math.sin(cover_angle)
+                    # Add strategic camouflage cover directly in front of / flanking the deer
+                    for _ in range(10):
+                        cover_type = self.rng.choice(["rock", "oak_tree", "pine_tree"])
+                        # Place cover along sightline from spawn to create authentic visual occlusion
+                        cover_dist = max(1.5, dist - self.rng.uniform(1.1, 1.45))
+                        cover_angle = angle + self.rng.uniform(-0.15, 0.15)
+                        cx = cover_dist * math.cos(cover_angle)
+                        cy = cover_dist * math.sin(cover_angle)
 
-                    if self.is_valid_position(cx, cy, radius=0.8):
-                        cover_uri = f"model://{cover_type}"
-                        cover_model = self.place_object(f"cover_{label.lower()}_{i+1}", cover_uri, cx, cy, self.rng.uniform(-math.pi, math.pi), radius=0.8)
-                        models.append(cover_model)
+                        cover_radius = 0.8 if cover_type == "rock" else 0.95
+                        if self.is_valid_cover_position(cx, cy, radius=cover_radius, deer_x=dx, deer_y=dy):
+                            cover_uri = f"model://{cover_type}"
+                            cover_model = self.place_object(f"cover_{label.lower()}_{i+1}", cover_uri, cx, cy, self.rng.uniform(-math.pi, math.pi), radius=cover_radius)
+                            models.append(cover_model)
+                            break
+
+                    # Add secondary flank rock/tree for dense thicket concealment
+                    for _ in range(10):
+                        flank_type = self.rng.choice(["rock", "pine_tree", "oak_tree"])
+                        flank_dist = dist + self.rng.uniform(-0.2, 0.4)
+                        flank_angle = angle + self.rng.choice([-0.25, 0.25])
+                        fx = flank_dist * math.cos(flank_angle)
+                        fy = flank_dist * math.sin(flank_angle)
+                        flank_radius = 0.75 if flank_type == "rock" else 0.9
+                        if self.is_valid_cover_position(fx, fy, radius=flank_radius, deer_x=dx, deer_y=dy):
+                            flank_model = self.place_object(f"flank_{label.lower()}_{i+1}", f"model://{flank_type}", fx, fy, self.rng.uniform(-math.pi, math.pi), radius=flank_radius)
+                            models.append(flank_model)
+                            break
 
                     self.deer_metadata.append({
                         "name": deer_model["name"],

@@ -62,22 +62,35 @@ class CamouflageDetectionNode(Node):
         self.get_logger().info(f'CPU Frame Skip: {self.frame_skip}')
         self.get_logger().info(f'Live GUI Window: {self.show_window}')
 
-        # Model resolution logic
+        # Robust Model resolution logic (supports Docker /workspace and host paths)
+        workspace_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
         custom_weights = [
-            self.model_path,
+            os.path.join(workspace_root, 'training', 'weights', 'best.pt'),
+            os.path.join(workspace_root, 'training', 'weights', 'deer_yolov8.pt'),
+            os.path.join(workspace_root, 'training', 'weights', 'camouflage_best.pt'),
             '/workspace/training/weights/best.pt',
             '/workspace/training/weights/deer_yolov8.pt',
-            'yolov8n.pt'
+            '/workspace/training/weights/camouflage_best.pt'
         ]
-        
+
         selected_model = None
-        for w in custom_weights:
-            if os.path.isabs(w) and os.path.exists(w):
-                selected_model = w
-                break
-            elif not os.path.isabs(w):
-                selected_model = w
-                break
+        # 1. If explicit non-default model path was given, check it first
+        if self.model_path and self.model_path != 'yolov8n.pt':
+            if os.path.exists(self.model_path):
+                selected_model = os.path.abspath(self.model_path)
+            else:
+                selected_model = self.model_path
+
+        # 2. Check for trained weights if no explicit path was provided
+        if selected_model is None:
+            for w in custom_weights:
+                if os.path.exists(w):
+                    selected_model = w
+                    break
+
+        # 3. Fallback to base pretrained YOLOv8n
+        if selected_model is None:
+            selected_model = 'yolov8n.pt'
 
         if YOLO_AVAILABLE:
             try:
@@ -183,7 +196,7 @@ class CamouflageDetectionNode(Node):
                                 continue
 
                             is_wildlife_target = (cls_name in self.ungulate_coco_classes) or (cls_name == self.target_animal)
-                            label_name = "DEER" if is_wildlife_target else cls_name.upper()
+                            label_name = self.target_animal.upper() if is_wildlife_target else cls_name.upper()
 
                             bbox_h = max(float(xyxy[3] - xyxy[1]), 1.0)
                             dist_m = round((self.focal_length_px * self.real_target_height_m) / bbox_h, 1)
@@ -243,9 +256,15 @@ class CamouflageDetectionNode(Node):
         h, w, _ = cv_image.shape
         annotated_image = cv_image.copy()
 
-        # Non-blocking: Pass current frame to background inference worker and grab latest detections
+        # Frame skip logic for CPU optimization
+        skip_inference = False
+        if self.frame_skip > 0 and (self.inference_frame_idx % (self.frame_skip + 1) != 0):
+            skip_inference = True
+
+        # Non-blocking: Pass current frame to background inference worker unless skipped
         with self.infer_lock:
-            self.latest_input_frame = cv_image
+            if not skip_inference:
+                self.latest_input_frame = cv_image
             current_raw = list(self.latest_raw_detections)
 
         # Apply Temporal Smoothing on bounding boxes to prevent jitter
@@ -302,18 +321,22 @@ class CamouflageDetectionNode(Node):
         except CvBridgeError as e:
             self.get_logger().error(f'CvBridge publish error: {e}')
 
-        # Display live GUI feed window
+        # Display live GUI feed window (protected against headless environments)
         if self.show_window:
-            cv2.imshow("Camouflage Animal Detection Feed", annotated_image)
-            key = cv2.waitKey(1) & 0xFF
             try:
-                visible = cv2.getWindowProperty("Camouflage Animal Detection Feed", cv2.WND_PROP_VISIBLE)
-            except Exception:
-                visible = 0
-            if key in (27, ord('q')) or visible < 1:
-                self.get_logger().info("User closed camera window (pressed 'q'/ESC or clicked [X]).")
+                cv2.imshow("Camouflage Animal Detection Feed", annotated_image)
+                key = cv2.waitKey(1) & 0xFF
+                try:
+                    visible = cv2.getWindowProperty("Camouflage Animal Detection Feed", cv2.WND_PROP_VISIBLE)
+                except Exception:
+                    visible = 1
+                if key in (27, ord('q')) or visible < 1:
+                    self.get_logger().info("User closed camera window (pressed 'q'/ESC or clicked [X]).")
+                    self.show_window = False
+                    cv2.destroyAllWindows()
+            except Exception as e:
+                self.get_logger().warn(f"GUI window display not available ({e}). Running in headless perception mode.")
                 self.show_window = False
-                cv2.destroyAllWindows()
 
         # Find primary target for autonomous visual servoing
         targets = [d for d in smoothed_detections if d['is_target']]

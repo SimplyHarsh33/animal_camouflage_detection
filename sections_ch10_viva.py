@@ -2,7 +2,7 @@
 """Chapter 10: Comprehensive Viva Defense & Oral Examination Handbook"""
 
 def get_ch10():
-    return """
+    return r"""
 <!-- ==================== CHAPTER 10 ==================== -->
 <div class="page-break">
   <h1 class="section-title"><span class="section-num">10</span> Comprehensive Viva Defense & Oral Examination Guide</h1>

@@ -2,7 +2,7 @@
 """Chapters 7, 8, and 9 for Master Handbook"""
 
 def get_ch7():
-    return """
+    return r"""
 <!-- ==================== CHAPTER 7 ==================== -->
 <div class="page-break">
   <h1 class="section-title"><span class="section-num">07</span> Autonomous Navigation, Search & Visual Servoing</h1>
@@ -157,7 +157,7 @@ def get_ch7():
 """
 
 def get_ch8():
-    return """
+    return r"""
 <!-- ==================== CHAPTER 8 ==================== -->
 <div class="page-break">
   <h1 class="section-title"><span class="section-num">08</span> AI Training Pipeline, Synthetic Dataset Generation & Transfer Learning</h1>
@@ -243,7 +243,7 @@ names:
 """
 
 def get_ch9():
-    return """
+    return r"""
 <!-- ==================== CHAPTER 9 ==================== -->
 <div class="page-break">
   <h1 class="section-title"><span class="section-num">09</span> Docker Containerization, Deployment & System Administration</h1>

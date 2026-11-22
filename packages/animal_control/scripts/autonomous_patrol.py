@@ -79,9 +79,10 @@ class AutonomousPatrolNode(Node):
             data = json.loads(msg.data)
             self.target_acquired = data.get('target_acquired', False)
             self.target_count = data.get('target_count', 0)
-            self.primary_target = data.get('primary_target', None)
+            pt = data.get('primary_target', None)
 
-            if self.target_acquired:
+            if self.target_acquired and pt:
+                self.primary_target = pt
                 self.last_target_time = time.time()
         except Exception as e:
             self.get_logger().error(f'Error parsing detection status JSON: {e}')
@@ -95,7 +96,8 @@ class AutonomousPatrolNode(Node):
     def control_loop(self):
         now = time.time()
         state_elapsed = now - self.state_start_time
-        recent_target = (now - self.last_target_time < 0.6) and self.target_acquired
+        time_since_target = now - self.last_target_time
+        recent_target = (time_since_target < 0.8) and (self.primary_target is not None)
 
         # ==========================================================
         # STATE: TRACK_TARGET (Visual Servoing to Center & Inspect)
@@ -103,8 +105,8 @@ class AutonomousPatrolNode(Node):
         if recent_target and self.primary_target is not None:
             if self.state != self.STATE_TRACK_TARGET:
                 self.get_logger().info(
-                    f'🦌 TARGET SPOTTED! Locking on {self.primary_target["label"]} '
-                    f'at estimated distance {self.primary_target["distance_m"]}m'
+                    f'🦌 TARGET SPOTTED! Locking on {self.primary_target.get("label", "TARGET")} '
+                    f'at estimated distance {self.primary_target.get("distance_m", 0.0)}m'
                 )
                 self.state = self.STATE_TRACK_TARGET
                 self.state_start_time = now
@@ -145,14 +147,16 @@ class AutonomousPatrolNode(Node):
                     self.state = self.STATE_TURN_BOUNCE
                     self.state_start_time = now
                     self.inspection_start_time = None
+                    self.primary_target = None
             return
 
-        # If target was lost while tracking, give 1.5s grace period before resuming scan
+        # If target was lost while tracking, give genuine 1.5s grace period before resuming scan
         if self.state == self.STATE_TRACK_TARGET:
-            if state_elapsed > 1.5:
+            if time_since_target > 1.5:
                 self.get_logger().info('Target lost or obscured. Resuming environmental sweep...')
                 self.state = self.STATE_SCAN_SWEEP
                 self.state_start_time = now
+                self.primary_target = None
             else:
                 # Slowly spin in last seen direction
                 self.publish_cmd(0.0, 0.15)

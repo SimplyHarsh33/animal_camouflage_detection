@@ -595,6 +595,8 @@ add_para(
 )
 
 # ── Save ──────────────────────────────────────────────────────────────────────
-out = '/workspace/PROJECT_GUIDE.docx'
+import os
+script_dir = os.path.dirname(os.path.abspath(__file__))
+out = '/workspace/PROJECT_GUIDE.docx' if os.path.exists('/workspace') else os.path.join(script_dir, 'PROJECT_GUIDE.docx')
 doc.save(out)
 print(f'Saved: {out}')

@@ -11,8 +11,16 @@ __pycache__/
 
 # Training output folders
 training/runs/
-training/dataset/images/
-training/dataset/labels/
+training/dataset/images/*
+!training/dataset/images/train/
+!training/dataset/images/val/
+!training/dataset/images/**/.gitkeep
+training/dataset/labels/*
+!training/dataset/labels/train/
+!training/dataset/labels/val/
+!training/dataset/labels/**/.gitkeep
+training/weights/*
+!training/weights/.gitkeep
 
 # ROS 2 build artifacts
 build/

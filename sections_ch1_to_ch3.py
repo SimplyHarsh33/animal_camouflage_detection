@@ -2,7 +2,7 @@
 """Chapters 1, 2, and 3 for Master Handbook"""
 
 def get_ch1():
-    return """
+    return r"""
 <!-- ==================== CHAPTER 1 ==================== -->
 <div class="page-break">
   <h1 class="section-title"><span class="section-num">01</span> Executive Summary, Project Vision & Foundations</h1>
@@ -184,7 +184,7 @@ def get_ch1():
 """
 
 def get_ch2():
-    return """
+    return r"""
 <!-- ==================== CHAPTER 2 ==================== -->
 <div class="page-break">
   <h1 class="section-title"><span class="section-num">02</span> End-to-End System Architecture & Computational Dataflow</h1>
@@ -354,7 +354,7 @@ self.annotated_pub.publish(out_msg)
 """
 
 def get_ch3():
-    return """
+    return r"""
 <!-- ==================== CHAPTER 3 ==================== -->
 <div class="page-break">
   <h1 class="section-title"><span class="section-num">03</span> Robot Kinematics, Mechanical Anatomy & URDF Modeling</h1>

@@ -10,6 +10,7 @@ import sys
 import shutil
 import urllib.request
 import zipfile
+import tempfile
 
 MODELS_DIR = os.path.dirname(os.path.abspath(__file__))
 
@@ -102,7 +103,7 @@ map_Kd ../materials/textures/{name}_basecolor.jpg
 def setup_rock_from_fuel():
     rock_dir = os.path.join(MODELS_DIR, "rock")
     os.makedirs(rock_dir, exist_ok=True)
-    zip_path = "/tmp/rock.zip"
+    zip_path = os.path.join(tempfile.gettempdir(), "rock.zip")
     download_file("https://fuel.gazebosim.org/1.0/OpenRobotics/models/Falling%20Rock%201.zip", zip_path)
     with zipfile.ZipFile(zip_path, 'r') as zip_ref:
         zip_ref.extractall(rock_dir)
@@ -119,12 +120,12 @@ def setup_osrf_model(name):
     
     if name == "oak_tree":
         download_file(f"{base_url}/meshes/oak_tree.dae", os.path.join(target_dir, "meshes", "oak_tree.dae"))
-        download_file(f"{base_url}/materials/textures/bark_0021.jpg", os.path.join(target_dir, "materials", "textures", "bark_0021.jpg"))
-        download_file(f"{base_url}/materials/textures/branch_0006.png", os.path.join(target_dir, "materials", "textures", "branch_0006.png"))
+        download_file(f"{base_url}/materials/textures/bark_0021.jpg", os.path.join(target_dir, "materials", "textures", "bark_diffuse.png"))
+        download_file(f"{base_url}/materials/textures/branch_0006.png", os.path.join(target_dir, "materials", "textures", "branch_diffuse.png"))
     elif name == "pine_tree":
         download_file(f"{base_url}/meshes/pine_tree.dae", os.path.join(target_dir, "meshes", "pine_tree.dae"))
-        download_file(f"{base_url}/materials/textures/bark_0021.jpg", os.path.join(target_dir, "materials", "textures", "bark_0021.jpg"))
-        download_file(f"{base_url}/materials/textures/pine_tree.png", os.path.join(target_dir, "materials", "textures", "pine_tree.png"))
+        download_file(f"{base_url}/materials/textures/bark_0021.jpg", os.path.join(target_dir, "materials", "textures", "bark_diffuse.png"))
+        download_file(f"{base_url}/materials/textures/pine_tree.png", os.path.join(target_dir, "materials", "textures", "branch_2_diffuse.png"))
 
 def main():
     print("=== Setting up Realistic 3D Animals & Environment Models ===")

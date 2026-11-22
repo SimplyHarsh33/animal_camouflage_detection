@@ -10,14 +10,19 @@ import os
 import shutil
 from ultralytics import YOLO
 
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+DEFAULT_DATA = os.path.join(SCRIPT_DIR, "dataset", "data.yaml")
+DEFAULT_WEIGHTS = os.path.join(SCRIPT_DIR, "weights", "best.pt")
+DEFAULT_PROJECT = os.path.join(SCRIPT_DIR, "runs")
+
 def parse_args():
     parser = argparse.ArgumentParser(description="Train YOLOv8 for Camouflage Deer Detection")
-    parser.add_argument("--data", type=str, default="/workspace/training/dataset/data.yaml", help="Path to data.yaml")
+    parser.add_argument("--data", type=str, default=DEFAULT_DATA, help="Path to data.yaml")
     parser.add_argument("--model", type=str, default="yolov8n.pt", help="Pretrained base model (e.g. yolov8n.pt, yolov8s.pt)")
     parser.add_argument("--epochs", type=int, default=30, help="Number of training epochs")
     parser.add_argument("--batch", type=int, default=8, help="Batch size")
     parser.add_argument("--imgsz", type=int, default=640, help="Image size")
-    parser.add_argument("--output-weights", type=str, default="/workspace/training/weights/best.pt", help="Target weights path")
+    parser.add_argument("--output-weights", type=str, default=DEFAULT_WEIGHTS, help="Target weights path")
     return parser.parse_args()
 
 def main():
@@ -49,7 +54,7 @@ def main():
         fliplr=0.5,
         mosaic=1.0,
         mixup=0.1,
-        project="/workspace/training/runs",
+        project=DEFAULT_PROJECT,
         name="deer_camouflage",
         exist_ok=True
     )

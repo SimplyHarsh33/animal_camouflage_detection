@@ -17,10 +17,15 @@ class DatasetCollectorNode(Node):
     def __init__(self):
         super().__init__('dataset_collector_node')
 
-        self.declare_parameter('output_dir', '/workspace/training/dataset/images/train')
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        default_out = '/workspace/training/dataset/images/train' if os.path.exists('/workspace') else os.path.join(script_dir, 'dataset', 'images', 'train')
+
+        self.declare_parameter('output_dir', default_out)
+        self.declare_parameter('prefix', 'deer_camou')
         self.declare_parameter('auto_interval_sec', 0.5) # 0 to disable auto capture
 
         self.output_dir = self.get_parameter('output_dir').get_parameter_value().string_value
+        self.prefix = self.get_parameter('prefix').get_parameter_value().string_value
         self.interval = self.get_parameter('auto_interval_sec').get_parameter_value().double_value
 
         os.makedirs(self.output_dir, exist_ok=True)
@@ -32,6 +37,7 @@ class DatasetCollectorNode(Node):
         self.last_saved_time = 0.0
 
         self.get_logger().info(f'Saving frames to: {self.output_dir}')
+        self.get_logger().info(f'Filename prefix: {self.prefix}')
         self.get_logger().info(f'Auto-capture interval: {self.interval}s (0 = manual)')
 
     def image_cb(self, msg: Image):
@@ -39,7 +45,7 @@ class DatasetCollectorNode(Node):
         if self.interval > 0 and (now - self.last_saved_time >= self.interval):
             try:
                 cv_img = self.bridge.imgmsg_to_cv2(msg, desired_encoding='bgr8')
-                filename = f"leopard_camou_{self.img_counter:05d}.jpg"
+                filename = f"{self.prefix}_{self.img_counter:05d}.jpg"
                 filepath = os.path.join(self.output_dir, filename)
                 cv2.imwrite(filepath, cv_img)
                 self.img_counter += 1

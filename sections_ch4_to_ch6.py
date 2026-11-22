@@ -2,7 +2,7 @@
 """Chapters 4, 5, and 6 for Master Handbook"""
 
 def get_ch4():
-    return """
+    return r"""
 <!-- ==================== CHAPTER 4 ==================== -->
 <div class="page-break">
   <h1 class="section-title"><span class="section-num">04</span> Optical Sensor Engineering & Monocular Depth Estimation</h1>
@@ -136,7 +136,7 @@ def get_ch4():
 """
 
 def get_ch5():
-    return """
+    return r"""
 <!-- ==================== CHAPTER 5 ==================== -->
 <div class="page-break">
   <h1 class="section-title"><span class="section-num">05</span> Gazebo Simulation Environment & Procedural World Generation</h1>
@@ -217,7 +217,7 @@ ros2 launch animal_gazebo simulation.launch.py gui:=true recognition:=true auton
 """
 
 def get_ch6():
-    return """
+    return r"""
 <!-- ==================== CHAPTER 6 ==================== -->
 <div class="page-break">
   <h1 class="section-title"><span class="section-num">06</span> Computer Vision Perception Engine & YOLOv8 Architecture</h1>
