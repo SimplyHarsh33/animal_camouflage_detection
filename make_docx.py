@@ -581,7 +581,6 @@ add_code([
     '',
     '# Step 2 — Inside container, start the dashboard',
     'source install/setup.bash',
-    'pip install flask -q',
     'python3 start_dashboard.py',
     '',
     '# Step 3 — Open browser on host machine',
@@ -589,8 +588,8 @@ add_code([
 ])
 doc.add_paragraph()
 add_para(
-    'Note: pip install flask must be re-run every time a new container is created '
-    'because the Docker image does not include Flask pre-installed.',
+    'Note: Flask and python-docx are permanently baked into the Docker image, '
+    'so you do not need to run pip install every time.',
     italic=True
 )
 
