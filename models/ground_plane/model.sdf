@@ -32,9 +32,8 @@
         </geometry>
         <material>
           <script>
-            <uri>model://ground_plane/materials/scripts</uri>
-            <uri>model://ground_plane/materials/textures</uri>
-            <name>GroundPlane/ForestFloor</name>
+            <uri>file://media/materials/scripts/gazebo.material</uri>
+            <name>Gazebo/Grass</name>
           </script>
         </material>
       </visual>

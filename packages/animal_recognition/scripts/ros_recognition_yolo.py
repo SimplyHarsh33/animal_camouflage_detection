@@ -196,7 +196,11 @@ class CamouflageDetectionNode(Node):
                                 continue
 
                             is_wildlife_target = (cls_name in self.ungulate_coco_classes) or (cls_name == self.target_animal)
-                            label_name = self.target_animal.upper() if is_wildlife_target else cls_name.upper()
+                            if not is_wildlife_target:
+                                # Strictly ignore all non-deer / non-target classes (e.g. car, person, objects)
+                                continue
+
+                            label_name = self.target_animal.upper()
 
                             bbox_h = max(float(xyxy[3] - xyxy[1]), 1.0)
                             dist_m = round((self.focal_length_px * self.real_target_height_m) / bbox_h, 1)
@@ -270,16 +274,18 @@ class CamouflageDetectionNode(Node):
         # Apply Temporal Smoothing on bounding boxes to prevent jitter
         smoothed_detections = self.smooth_predictions(current_raw)
 
-        # Draw annotations
+        # Draw annotations (Strictly target deer only)
         for det in smoothed_detections:
+            if not det.get('is_target', False):
+                continue
             x1, y1, x2, y2 = [int(v) for v in det['bbox']]
             conf = det['confidence']
-            is_target = det['is_target']
-            name = det['class_name']
+            is_target = True
+            name = self.target_animal.upper()
             dist_m = det.get('distance_m', 0.0)
 
-            # Box styling: green for target deer, orange for others
-            box_color = (0, 255, 60) if is_target else (0, 165, 255)
+            # Box styling: green for target deer
+            box_color = (0, 255, 60)
             cv2.rectangle(annotated_image, (x1, y1), (x2, y2), box_color, 2)
 
             # Corner brackets for tactical look

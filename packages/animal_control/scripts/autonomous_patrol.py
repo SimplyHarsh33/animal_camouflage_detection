@@ -33,7 +33,7 @@ class AutonomousPatrolNode(Node):
         self.declare_parameter('scan_speed', 0.58)       # rad/s for 360 scan (optimized for responsive scanning)
         self.declare_parameter('forward_speed', 0.24)    # m/s for exploration
         self.declare_parameter('stop_distance', 2.6)     # meters to hold inspection
-        self.declare_parameter('classification_threshold', 0.60) # Confidence threshold to classify as deer
+        self.declare_parameter('classification_threshold', 0.65) # 65% confidence threshold to instantly catalog deer
         self.declare_parameter('expected_targets', 3)    # Total camouflaged deers in sector
         self.declare_parameter('auto_start', True)
 
@@ -108,79 +108,55 @@ class AutonomousPatrolNode(Node):
         recent_target = (time_since_target < 0.8) and (self.primary_target is not None)
 
         # ==========================================================
-        # STATE: TRACK_TARGET (Visual Servoing to Center & Inspect)
+        # STATE: TRACK_TARGET (Instant 65% Catalog & Move to Next Deer)
         # ==========================================================
         if recent_target and self.primary_target is not None:
             conf = float(self.primary_target.get('confidence', 0.0))
             if conf >= self.classification_threshold:
-                if self.state != self.STATE_TRACK_TARGET:
-                    self.get_logger().info(
-                        f'🦌 TARGET CLASSIFIED! Deer spotted with {int(conf * 100)}% confidence '
-                        f'(Threshold: {int(self.classification_threshold * 100)}%) at distance {self.primary_target.get("distance_m", 0.0)}m'
-                    )
-                    self.state = self.STATE_TRACK_TARGET
-                    self.state_start_time = now
-                    self.inspection_start_time = None
-
                 cx = self.primary_target['center_x']
                 dist = self.primary_target['distance_m']
                 error_x = self.image_center_x - cx
+                bearing_rad = (error_x / self.image_center_x) * 0.70
+                bearing_deg = round(math.degrees(bearing_rad), 1)
 
-                # Proportional angular steering to keep target centered in FOV
-                angular_z = float(self.kp_steer * error_x)
-                angular_z = max(min(angular_z, 0.65), -0.65)
+                # Immediately catalog the deer right from this point
+                self.inspected_targets_count += 1
+                deer_record = {
+                    "id": f"DEER-{self.inspected_targets_count:02d}",
+                    "confidence": conf,
+                    "distance_m": dist,
+                    "bearing_deg": bearing_deg,
+                    "time": time.strftime('%H:%M:%S')
+                }
+                self.visited_targets.append(deer_record)
+                self.get_logger().info(
+                    f'✅ [DEER CLASSIFIED & VISITED (65%+ Lock at {dist:.1f}m)] ID: {deer_record["id"]} | '
+                    f'Bearing: {bearing_deg}° | Confidence: {int(conf * 100)}% '
+                    f'({len(self.visited_targets)}/{self.expected_targets} Cataloged)'
+                )
 
-                # Approach or Hold Position
-                if dist > self.stop_distance:
-                    linear_x = self.forward_speed * 0.7  # Cautious approach
-                    self.inspection_start_time = None
-                    self.publish_cmd(linear_x, angular_z)
-                else:
-                    # Target in optimal range - halt and inspect
-                    linear_x = 0.0
-                    angular_z = float(self.kp_steer * error_x * 0.5)  # Fine centering only
-                    self.publish_cmd(linear_x, angular_z)
+                # If all targets have been cataloged, print all at once and halt
+                if len(self.visited_targets) >= self.expected_targets:
+                    all_summary = " | ".join([
+                        f"{t['id']} (Dist: {t['distance_m']:.1f}m, Bearing: {t['bearing_deg']}°, Conf: {int(t['confidence'] * 100)}%, Time: {t['time']})"
+                        for t in self.visited_targets
+                    ])
+                    self.get_logger().info('============================================================')
+                    self.get_logger().info(f'🏆 ALL {len(self.visited_targets)} DEERS CLASSIFIED & CATALOGED!')
+                    self.get_logger().info(f'All Targets Summary: {all_summary}')
+                    self.get_logger().info('============================================================')
+                    self.all_targets_cataloged = True
+                    self.publish_cmd(0.0, 0.0)
+                    return
 
-                    if self.inspection_start_time is None:
-                        self.inspection_start_time = now
-                        self.inspected_targets_count += 1
-                        self.get_logger().info(
-                            f'🎯 [VISUAL LOCK CONFIRMED] Inspecting target #{self.inspected_targets_count} at {dist:.1f}m...'
-                        )
-
-                    # Hold inspection for 3 seconds, catalog target, then resume search
-                    if (now - self.inspection_start_time) > 3.0:
-                        deer_record = {
-                            "id": f"DEER-{self.inspected_targets_count:02d}",
-                            "confidence": conf,
-                            "distance_m": dist,
-                            "time": time.strftime('%H:%M:%S')
-                        }
-                        self.visited_targets.append(deer_record)
-                        self.get_logger().info(
-                            f'✅ [DEER VISITED #{self.inspected_targets_count}] ID: {deer_record["id"]} | '
-                            f'Range: {dist:.1f}m | Confidence: {int(conf * 100)}% '
-                            f'({len(self.visited_targets)}/{self.expected_targets} Cataloged)'
-                        )
-
-                        # If all targets have been cataloged, print all at once and halt
-                        if len(self.visited_targets) >= self.expected_targets:
-                            all_summary = " | ".join([
-                                f"{t['id']} (Dist: {t['distance_m']:.1f}m, Conf: {int(t['confidence'] * 100)}%, Time: {t['time']})"
-                                for t in self.visited_targets
-                            ])
-                            self.get_logger().info('============================================================')
-                            self.get_logger().info(f'🏆 ALL {len(self.visited_targets)} DEERS CLASSIFIED & CATALOGED!')
-                            self.get_logger().info(f'All Targets Summary: {all_summary}')
-                            self.get_logger().info('============================================================')
-                            self.all_targets_cataloged = True
-                            self.publish_cmd(0.0, 0.0)
-                            return
-
-                        self.state = self.STATE_TURN_BOUNCE
-                        self.state_start_time = now
-                        self.inspection_start_time = None
-                        self.primary_target = None
+                # Immediately pivot and move on to find the next deer
+                self.get_logger().info(f'Target {deer_record["id"]} cataloged from {dist:.1f}m. Pivoting to search for next deer...')
+                self.state = self.STATE_TURN_BOUNCE
+                self.state_start_time = now
+                self.inspection_start_time = None
+                self.primary_target = None
+                self.publish_cmd(0.0, 0.65)
+                return
                 return
 
         # If all targets have already been cataloged, remain halted

@@ -835,7 +835,7 @@
         </div>
         <div style="background: rgba(15, 23, 42, 0.6); padding: 10px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.06); text-align: center;">
           <div style="font-size: 10.5px; color: var(--text-muted); text-transform: uppercase;">Detection Cutoff</div>
-          <div style="font-size: 18px; font-weight: 700; color: #f59e0b;" id="modal-metric-threshold">60%</div>
+          <div style="font-size: 18px; font-weight: 700; color: #f59e0b;" id="modal-metric-threshold">65%</div>
         </div>
         <div style="background: rgba(15, 23, 42, 0.6); padding: 10px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.06); text-align: center;">
           <div style="font-size: 10.5px; color: var(--text-muted); text-transform: uppercase;">Patrol Status</div>
@@ -1150,7 +1150,7 @@
       document.getElementById('modal-metric-total').innerText = deers.length;
       const visitedCount = deers.filter(d => d.visited).length;
       document.getElementById('modal-metric-visited').innerText = `${visitedCount} / ${deers.length}`;
-      document.getElementById('modal-metric-threshold').innerText = `${Math.round((threshold || 0.60) * 100)}%`;
+      document.getElementById('modal-metric-threshold').innerText = `${Math.round((threshold || 0.65) * 100)}%`;
       document.getElementById('modal-metric-status').innerText = allVisited ? "ALL CATALOGED" : (isAutonomousActive ? "PATROLLING" : "MANUAL");
       document.getElementById('modal-metric-status').style.color = allVisited ? "#34d399" : (isAutonomousActive ? "#38bdf8" : "#94a3b8");
 
