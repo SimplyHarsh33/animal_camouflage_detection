@@ -108,18 +108,19 @@ class AutonomousPatrolNode(Node):
         recent_target = (time_since_target < 0.8) and (self.primary_target is not None)
 
         # ==========================================================
-        # STATE: TRACK_TARGET (Instant 65% Catalog & Move to Next Deer)
+        # STATE: TRACK_TARGET (Advance Toward Deer to Increase Confidence -> Catalog at 65%)
         # ==========================================================
         if recent_target and self.primary_target is not None:
             conf = float(self.primary_target.get('confidence', 0.0))
-            if conf >= self.classification_threshold:
-                cx = self.primary_target['center_x']
-                dist = self.primary_target['distance_m']
-                error_x = self.image_center_x - cx
-                bearing_rad = (error_x / self.image_center_x) * 0.70
-                bearing_deg = round(math.degrees(bearing_rad), 1)
+            cx = self.primary_target.get('center_x', self.image_center_x)
+            dist = float(self.primary_target.get('distance_m', 5.0))
+            error_x = self.image_center_x - cx
+            bearing_rad = (error_x / self.image_center_x) * 0.70
+            bearing_deg = round(math.degrees(bearing_rad), 1)
 
-                # Immediately catalog the deer right from this point
+            # Check if 65%+ confidence reached or close range reached
+            if conf >= self.classification_threshold or (self.state == self.STATE_TRACK_TARGET and dist <= self.stop_distance):
+                # Target achieved >= 65% confidence: Immediately catalog and mark as visited!
                 self.inspected_targets_count += 1
                 deer_record = {
                     "id": f"DEER-{self.inspected_targets_count:02d}",
@@ -130,7 +131,7 @@ class AutonomousPatrolNode(Node):
                 }
                 self.visited_targets.append(deer_record)
                 self.get_logger().info(
-                    f'✅ [DEER CLASSIFIED & VISITED (65%+ Lock at {dist:.1f}m)] ID: {deer_record["id"]} | '
+                    f'✅ [CONFIDENCE GOAL REACHED >=65%] ID: {deer_record["id"]} verified at {dist:.1f}m | '
                     f'Bearing: {bearing_deg}° | Confidence: {int(conf * 100)}% '
                     f'({len(self.visited_targets)}/{self.expected_targets} Cataloged)'
                 )
@@ -150,13 +151,28 @@ class AutonomousPatrolNode(Node):
                     return
 
                 # Immediately pivot and move on to find the next deer
-                self.get_logger().info(f'Target {deer_record["id"]} cataloged from {dist:.1f}m. Pivoting to search for next deer...')
+                self.get_logger().info(f'Target {deer_record["id"]} cataloged. Pivoting to search for next deer...')
                 self.state = self.STATE_TURN_BOUNCE
                 self.state_start_time = now
                 self.inspection_start_time = None
                 self.primary_target = None
                 self.publish_cmd(0.0, 0.65)
                 return
+            else:
+                # Confidence is below 65%: Move toward the deer to increase confidence!
+                if self.state != self.STATE_TRACK_TARGET:
+                    self.get_logger().info(
+                        f'🦌 DEER DETECTED at initial {int(conf * 100)}% conf (dist: {dist:.1f}m). '
+                        f'Advancing toward deer to increase confidence to 65%...'
+                    )
+                    self.state = self.STATE_TRACK_TARGET
+                    self.state_start_time = now
+
+                # Visual servoing: center deer in camera frame and approach
+                angular_z = float(self.kp_steer * error_x)
+                angular_z = max(min(angular_z, 0.65), -0.65)
+                linear_x = self.forward_speed
+                self.publish_cmd(linear_x, angular_z)
                 return
 
         # If all targets have already been cataloged, remain halted

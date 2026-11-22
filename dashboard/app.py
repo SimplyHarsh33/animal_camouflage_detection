@@ -350,13 +350,12 @@ class VirtualForestSimulation:
                         rel_forward = -dx * math.sin(self.yaw) + dy * math.cos(self.yaw)
                         rel_lateral = dx * math.cos(self.yaw) + dy * math.sin(self.yaw)
                         angle_err = math.atan2(rel_lateral, max(0.1, rel_forward))
-                        # Camouflage perception confidence model
                         conf = max(0.40, min(0.95, 0.90 - (dist * 0.035)))
 
-                        # Once visual confidence reaches threshold (65%) at any distance:
-                        # Immediately mark as visited, calculate distance & coordinates from that point, then move on!
+                        # Target spotted in forward field of view
                         if rel_forward > 0.8 and abs(angle_err) < 0.35 and dist < 12.0:
                             if conf >= self.classification_threshold:
+                                # Already >= 65% at this vantage point: instantly catalog and mark visited!
                                 d["visited"] = True
                                 d["confidence"] = round(conf, 3)
                                 d["distance"] = round(dist, 2)
@@ -368,15 +367,12 @@ class VirtualForestSimulation:
                                 print(f"[AUTONOMY] {log_msg}")
                                 add_system_log("DEER_VISITED", log_msg)
 
-                                # Check remaining unvisited deers
                                 remaining = [i for i, deer_obj in enumerate(self.deers) if not deer_obj["visited"]]
                                 if len(remaining) > 0:
-                                    # Immediately pivot away and move on to find the next deer
                                     self.fsm_state = "SECTOR_TRACK"
                                     self.fsm_timer = now
                                     print(f"[AUTONOMY] Target #{self.inspected_count} cataloged from {dist:.1f}m. Pivoting to search for next deer...")
                                 else:
-                                    # All deers have been cataloged
                                     self.fsm_state = "ALL_DEERS_CATALOGED"
                                     self.v = 0.0
                                     self.w = 0.0
@@ -385,6 +381,59 @@ class VirtualForestSimulation:
                                     print(f"\n[MISSION COMPLETE] ALL {len(self.deers)} DEERS FOUND! Final Coordinates: {coords_summary}\n")
                                     add_system_log("ALL_VISITED", f"ALL {len(self.deers)} DEERS CATALOGED! Coordinates: {coords_summary}")
                                 break
+                            else:
+                                # Confidence is below 65%: Move towards it to increase the confidence and check!
+                                self.active_target_idx = idx
+                                self.fsm_state = "TARGET_CREEP"
+                                self.fsm_timer = now
+                                print(f"[AUTONOMY] Deer spotted at {int(conf*100)}% conf (dist {dist:.1f}m). Moving towards it to increase confidence to 65%...")
+                                break
+
+                elif self.fsm_state == "TARGET_CREEP":
+                    if self.active_target_idx is not None and self.active_target_idx < len(self.deers):
+                        target = self.deers[self.active_target_idx]
+                        dx = target['x'] - self.rx
+                        dy = target['y'] - self.ry
+                        dist = math.sqrt(dx * dx + dy * dy)
+                        rel_forward = -dx * math.sin(self.yaw) + dy * math.cos(self.yaw)
+                        rel_lateral = dx * math.cos(self.yaw) + dy * math.sin(self.yaw)
+                        angle_err = math.atan2(rel_lateral, max(0.1, rel_forward))
+                        conf = max(0.40, min(0.95, 0.90 - (dist * 0.035)))
+
+                        # Move towards target while centering
+                        self.w = -angle_err * 1.5
+                        self.v = 0.28
+
+                        # Check on every step: once confidence reaches >= 65% or within close inspection range!
+                        if conf >= self.classification_threshold or dist <= 2.2:
+                            # Reached 65%+! Mark as visited from this point and calculate coordinates
+                            target["visited"] = True
+                            target["confidence"] = round(conf, 3)
+                            target["distance"] = round(dist, 2)
+                            target["time_visited"] = time.strftime('%H:%M:%S')
+                            self.inspected_count += 1
+                            self.just_visited_deer = dict(target)
+
+                            log_msg = f"DEER CLASSIFIED & VISITED (Confidence reached {int(conf*100)}% at {dist:.1f}m): {target['id']} at X: {target['x']:+.2f}m, Y: {target['y']:+.2f}m - Marked VISITED! ({self.inspected_count}/{len(self.deers)})"
+                            print(f"[AUTONOMY] {log_msg}")
+                            add_system_log("DEER_VISITED", log_msg)
+
+                            remaining = [i for i, deer_obj in enumerate(self.deers) if not deer_obj["visited"]]
+                            if len(remaining) > 0:
+                                self.fsm_state = "SECTOR_TRACK"
+                                self.fsm_timer = now
+                                self.active_target_idx = None
+                                print(f"[AUTONOMY] Target #{self.inspected_count} cataloged. Pivoting to search for next deer...")
+                            else:
+                                self.fsm_state = "ALL_DEERS_CATALOGED"
+                                self.v = 0.0
+                                self.w = 0.0
+                                self.all_deers_cataloged_announced = True
+                                coords_summary = " | ".join([f"{deer_obj['id']}: (X: {deer_obj['x']:+.2f}m, Y: {deer_obj['y']:+.2f}m)" for deer_obj in self.deers])
+                                print(f"\n[MISSION COMPLETE] ALL {len(self.deers)} DEERS FOUND! Final Coordinates: {coords_summary}\n")
+                                add_system_log("ALL_VISITED", f"ALL {len(self.deers)} DEERS CATALOGED! Coordinates: {coords_summary}")
+                    else:
+                        self.fsm_state = "SECTOR_SCAN"
 
                 elif self.fsm_state == "SECTOR_TRACK":
                     # Pivot away from just-visited deer to face new sector

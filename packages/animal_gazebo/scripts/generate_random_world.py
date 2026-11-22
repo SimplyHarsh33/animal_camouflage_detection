@@ -42,11 +42,11 @@ class ProceduralWorldGenerator:
         # Safety radius around robot spawn (0, 0)
         self.spawn_clearance_radius = 2.0
 
-        # Density configs (trees, rocks) - tuned for dense woodland canopy
+        # Density configs (trees, rocks) - tuned for 15-16 FPS Real-Time Factor
         density_map = {
-            "low": {"trees": 20, "rocks": 14},
-            "medium": {"trees": 36, "rocks": 24},
-            "high": {"trees": 54, "rocks": 36},
+            "low": {"trees": 8, "rocks": 6},
+            "medium": {"trees": 15, "rocks": 10},
+            "high": {"trees": 22, "rocks": 14},
         }
         self.tree_count = density_map[density]["trees"]
         self.rock_count = density_map[density]["rocks"]
@@ -135,7 +135,7 @@ class ProceduralWorldGenerator:
 
         # 1. Build Perimeter Trees to visually enclose the sanctuary
         if self.perimeter:
-            step = 2.4
+            step = 3.2
             wall_dist = self.half_size
             perimeter_idx = 0
             # North and South walls
