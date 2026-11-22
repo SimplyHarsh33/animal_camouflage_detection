@@ -296,14 +296,14 @@ class VirtualForestSimulation:
             b = int(25 + 15 * factor)
             frame[y, :] = (b, g, r)
 
-        # 2. Forest Floor Ground Plane (Rich Woodland Camouflage Palette)
+        # 2. Forest Floor Ground Plane (Natural Green Grass Palette)
         horizon_y = 210
         for y in range(horizon_y, h):
             depth_f = (y - horizon_y) / float(h - horizon_y)
-            # Woodland forest floor: rich loam brown with moss & fallen needle undertones
-            r = int(32 + 34 * depth_f)
-            g = int(36 + 32 * depth_f)
-            b = int(20 + 20 * depth_f)
+            # Natural vibrant green grass with depth gradient
+            r = int(22 + 20 * depth_f)
+            g = int(75 + 50 * depth_f)
+            b = int(25 + 20 * depth_f)
             frame[y, :] = (b, g, r)
 
         # Moving perspective ground lines (shift as robot moves)
@@ -312,7 +312,7 @@ class VirtualForestSimulation:
             curr_gy = gy + grid_offset_y
             if curr_gy < h:
                 alpha = (curr_gy - horizon_y) / float(h - horizon_y)
-                color = (int(28 + 18 * alpha), int(42 + 25 * alpha), int(38 + 22 * alpha))
+                color = (int(20 + 15 * alpha), int(60 + 35 * alpha), int(20 + 15 * alpha))
                 cv2.line(frame, (0, curr_gy), (w, curr_gy), color, 1)
 
         # Perspective radial lines
@@ -320,7 +320,7 @@ class VirtualForestSimulation:
         for gx in range(-w, w * 2, 80):
             screen_gx = int(gx + yaw_offset)
             if -100 < screen_gx < w + 100:
-                cv2.line(frame, (screen_gx, horizon_y), (int(320 + (screen_gx - 320) * 2.8), h), (26, 40, 36), 1)
+                cv2.line(frame, (screen_gx, horizon_y), (int(320 + (screen_gx - 320) * 2.8), h), (20, 65, 20), 1)
 
         # 3. Depth-Sorted Rendering Queue (Painter's Algorithm for Natural Tree Occlusion)
         render_queue = []
