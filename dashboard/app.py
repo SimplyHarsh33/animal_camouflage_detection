@@ -115,43 +115,9 @@ class VirtualForestSimulation:
         self.fsm_timer = 0.0
         self.inspected_count = 0
         
-        # World Objects & Classification Threshold
-        self.classification_threshold = 0.65
-        self.deers = [
-            {
-                "id": "DEER-01",
-                "name": "Camouflaged Deer Alpha",
-                "x": 0.60,
-                "y": 4.50,
-                "visited": False,
-                "confidence": 0.0,
-                "distance": 0.0,
-                "time_visited": None
-            },
-            {
-                "id": "DEER-02",
-                "name": "Camouflaged Deer Bravo",
-                "x": -3.80,
-                "y": 6.80,
-                "visited": False,
-                "confidence": 0.0,
-                "distance": 0.0,
-                "time_visited": None
-            },
-            {
-                "id": "DEER-03",
-                "name": "Camouflaged Deer Charlie",
-                "x": 3.90,
-                "y": 8.20,
-                "visited": False,
-                "confidence": 0.0,
-                "distance": 0.0,
-                "time_visited": None
-            }
-        ]
-        self.active_target_idx = None
-        self.just_visited_deer = None
-        self.all_deers_cataloged_announced = False
+        # World Objects
+        self.deer_x = 0.0
+        self.deer_y = 5.2
         self.leopard_x = -3.8
         self.leopard_y = 7.5
         
@@ -215,58 +181,6 @@ class VirtualForestSimulation:
         self.deer_sprite = cv2.bitwise_and(raw_tex, raw_tex, mask=mask)
         self.deer_mask = mask
 
-    def reset_deers(self, seed=None):
-        """Reset and randomize deer positions on world rebuild or restart."""
-        with self.lock:
-            import random
-            if seed is not None:
-                try:
-                    s = int(seed)
-                except ValueError:
-                    s = 42
-            else:
-                s = int(time.time() * 100) % 1000
-
-            rng = random.Random(s)
-            self.deers = [
-                {
-                    "id": "DEER-01",
-                    "name": "Camouflaged Deer Alpha",
-                    "x": round(rng.uniform(-0.9, 0.9), 2),
-                    "y": round(rng.uniform(3.8, 5.0), 2),
-                    "visited": False,
-                    "confidence": 0.0,
-                    "distance": 0.0,
-                    "time_visited": None
-                },
-                {
-                    "id": "DEER-02",
-                    "name": "Camouflaged Deer Bravo",
-                    "x": round(rng.uniform(-4.2, -2.2), 2),
-                    "y": round(rng.uniform(5.5, 7.5), 2),
-                    "visited": False,
-                    "confidence": 0.0,
-                    "distance": 0.0,
-                    "time_visited": None
-                },
-                {
-                    "id": "DEER-03",
-                    "name": "Camouflaged Deer Charlie",
-                    "x": round(rng.uniform(2.5, 4.5), 2),
-                    "y": round(rng.uniform(6.5, 8.8), 2),
-                    "visited": False,
-                    "confidence": 0.0,
-                    "distance": 0.0,
-                    "time_visited": None
-                }
-            ]
-            self.active_target_idx = None
-            self.just_visited_deer = None
-            self.all_deers_cataloged_announced = False
-            self.inspected_count = 0
-            self.fsm_state = "SECTOR_SCAN"
-            self.fsm_timer = time.time()
-
     def start(self):
         with self.lock:
             self.running = True
@@ -275,12 +189,10 @@ class VirtualForestSimulation:
             self.yaw = 0.0
             self.v = 0.0
             self.w = 0.0
-            self.autonomy = False
             self.fsm_state = "SECTOR_SCAN"
             self.fsm_timer = time.time()
-            self.reset_deers()
         print("\n[MISSION CONTROL] Windows Native Interactive Simulation Mode ACTIVE.")
-        print("[MISSION CONTROL] Virtual camera live. 100% manual steering active.\n")
+        print("[MISSION CONTROL] Virtual camera live. Drive with WASD or click Autonomous Patrol.\n")
 
     def stop(self):
         with self.lock:
@@ -294,13 +206,6 @@ class VirtualForestSimulation:
         with self.lock:
             self.v = float(linear_x)
             self.w = float(angular_z)
-            if abs(self.w) < 1e-4:
-                self.w = 0.0
-            # User manual driving immediately pauses autonomy so control is completely in user hands!
-            if self.autonomy and (abs(linear_x) > 0.01 or abs(angular_z) > 0.01):
-                self.autonomy = False
-                self.fsm_state = "MANUAL_TELEOP"
-                print("[MISSION CONTROL] Manual Teleop override: Autonomy paused. Full user control active.")
 
     def set_autonomy(self, active):
         with self.lock:
@@ -308,12 +213,11 @@ class VirtualForestSimulation:
             if self.autonomy:
                 self.fsm_state = "SECTOR_SCAN"
                 self.fsm_timer = time.time()
-                self.active_target_idx = None
-                print("[AUTONOMY] FSM Started: SECTOR_SCAN (Sequential Deer Hunting)")
+                print("[AUTONOMY] FSM Started: SECTOR_SCAN")
             else:
                 self.v = 0.0
                 self.w = 0.0
-                print("[AUTONOMY] Autonomy Deactivated. Switched to 100% Manual Teleop.")
+                print("[AUTONOMY] Autonomy Deactivated. Switched to Manual Teleop.")
 
     def update_physics(self, dt):
         """Update robot position and Autonomous Patrol FSM logic."""
@@ -321,130 +225,60 @@ class VirtualForestSimulation:
             if not self.running:
                 return
 
-            # Autonomous Patrol Multi-Deer Sequential Search FSM
+            # Relative distance and angle to target deer
+            dx = self.deer_x - self.rx
+            dy = self.deer_y - self.ry
+            dist = math.sqrt(dx * dx + dy * dy)
+            
+            # Local coordinates of deer relative to robot camera
+            rel_forward = -dx * math.sin(self.yaw) + dy * math.cos(self.yaw)
+            rel_lateral = dx * math.cos(self.yaw) + dy * math.sin(self.yaw)
+            angle_err = math.atan2(rel_lateral, max(0.1, rel_forward))
+
+            # Autonomous Patrol FSM
             if self.autonomy:
                 now = time.time()
-                unvisited_indices = [i for i, d in enumerate(self.deers) if not d["visited"]]
-
-                if len(unvisited_indices) == 0:
-                    # All deers have been found and visited!
-                    self.v = 0.0
-                    self.w = 0.0
-                    self.fsm_state = "ALL_DEERS_CATALOGED"
-                    if not self.all_deers_cataloged_announced:
-                        self.all_deers_cataloged_announced = True
-                        coords_str = ", ".join([f"{d['id']} at ({d['x']:+.2f}m, {d['y']:+.2f}m)" for d in self.deers])
-                        print(f"\n[MISSION COMPLETE] ALL {len(self.deers)} DEERS CATALOGED! {coords_str}\n")
-                        add_system_log("CATALOG_COMPLETE", f"ALL {len(self.deers)} DEERS CATALOGED: {coords_str}")
-
-                elif self.fsm_state == "SECTOR_SCAN":
+                if self.fsm_state == "SECTOR_SCAN":
                     # Rotate in place to search for camouflaged wildlife
                     self.v = 0.0
-                    self.w = 0.38
-                    # Check visibility and confidence for unvisited deers
-                    for idx in unvisited_indices:
-                        d = self.deers[idx]
-                        dx = d['x'] - self.rx
-                        dy = d['y'] - self.ry
-                        dist = math.sqrt(dx * dx + dy * dy)
-                        rel_forward = -dx * math.sin(self.yaw) + dy * math.cos(self.yaw)
-                        rel_lateral = dx * math.cos(self.yaw) + dy * math.sin(self.yaw)
-                        angle_err = math.atan2(rel_lateral, max(0.1, rel_forward))
-                        conf = max(0.40, min(0.95, 0.90 - (dist * 0.035)))
-
-                        # Target spotted in forward field of view
-                        if rel_forward > 0.8 and abs(angle_err) < 0.35 and dist < 12.0:
-                            if conf >= self.classification_threshold:
-                                # Already >= 65% at this vantage point: instantly catalog and mark visited!
-                                d["visited"] = True
-                                d["confidence"] = round(conf, 3)
-                                d["distance"] = round(dist, 2)
-                                d["time_visited"] = time.strftime('%H:%M:%S')
-                                self.inspected_count += 1
-                                self.just_visited_deer = dict(d)
-
-                                log_msg = f"DEER CLASSIFIED & VISITED (65%+ Lock at {dist:.1f}m): {d['id']} at X: {d['x']:+.2f}m, Y: {d['y']:+.2f}m (Conf: {int(conf*100)}%) [VISITED] ({self.inspected_count}/{len(self.deers)})"
-                                print(f"[AUTONOMY] {log_msg}")
-                                add_system_log("DEER_VISITED", log_msg)
-
-                                remaining = [i for i, deer_obj in enumerate(self.deers) if not deer_obj["visited"]]
-                                if len(remaining) > 0:
-                                    self.fsm_state = "SECTOR_TRACK"
-                                    self.fsm_timer = now
-                                    print(f"[AUTONOMY] Target #{self.inspected_count} cataloged from {dist:.1f}m. Pivoting to search for next deer...")
-                                else:
-                                    self.fsm_state = "ALL_DEERS_CATALOGED"
-                                    self.v = 0.0
-                                    self.w = 0.0
-                                    self.all_deers_cataloged_announced = True
-                                    coords_summary = " | ".join([f"{deer_obj['id']}: (X: {deer_obj['x']:+.2f}m, Y: {deer_obj['y']:+.2f}m)" for deer_obj in self.deers])
-                                    print(f"\n[MISSION COMPLETE] ALL {len(self.deers)} DEERS FOUND! Final Coordinates: {coords_summary}\n")
-                                    add_system_log("ALL_VISITED", f"ALL {len(self.deers)} DEERS CATALOGED! Coordinates: {coords_summary}")
-                                break
-                            else:
-                                # Confidence is below 65%: Move towards it to increase the confidence and check!
-                                self.active_target_idx = idx
-                                self.fsm_state = "TARGET_CREEP"
-                                self.fsm_timer = now
-                                print(f"[AUTONOMY] Deer spotted at {int(conf*100)}% conf (dist {dist:.1f}m). Moving towards it to increase confidence to 65%...")
-                                break
+                    self.w = 0.35
+                    if rel_forward > 0.8 and abs(angle_err) < 0.30 and dist < 8.0:
+                        self.fsm_state = "TARGET_CREEP"
+                        self.fsm_timer = now
+                        print(f"[AUTONOMY] Target Detected! Transition: SECTOR_SCAN -> TARGET_CREEP (Dist: {dist:.1f}m)")
 
                 elif self.fsm_state == "TARGET_CREEP":
-                    if self.active_target_idx is not None and self.active_target_idx < len(self.deers):
-                        target = self.deers[self.active_target_idx]
-                        dx = target['x'] - self.rx
-                        dy = target['y'] - self.ry
-                        dist = math.sqrt(dx * dx + dy * dy)
-                        rel_forward = -dx * math.sin(self.yaw) + dy * math.cos(self.yaw)
-                        rel_lateral = dx * math.cos(self.yaw) + dy * math.sin(self.yaw)
-                        angle_err = math.atan2(rel_lateral, max(0.1, rel_forward))
-                        conf = max(0.40, min(0.95, 0.90 - (dist * 0.035)))
+                    # Drive towards target while centering
+                    self.w = -angle_err * 1.6
+                    self.v = 0.30
+                    if dist <= 2.2:
+                        self.fsm_state = "TARGET_VERIFICATION"
+                        self.fsm_timer = now
+                        self.v = 0.0
+                        self.w = 0.0
+                        print(f"[AUTONOMY] In Range. Transition: TARGET_CREEP -> TARGET_VERIFICATION (Dist: {dist:.1f}m)")
 
-                        # Move towards target while centering
-                        self.w = -angle_err * 1.5
-                        self.v = 0.28
-
-                        # Check on every step: once confidence reaches >= 65% or within close inspection range!
-                        if conf >= self.classification_threshold or dist <= 2.2:
-                            # Reached 65%+! Mark as visited from this point and calculate coordinates
-                            target["visited"] = True
-                            target["confidence"] = round(conf, 3)
-                            target["distance"] = round(dist, 2)
-                            target["time_visited"] = time.strftime('%H:%M:%S')
-                            self.inspected_count += 1
-                            self.just_visited_deer = dict(target)
-
-                            log_msg = f"DEER CLASSIFIED & VISITED (Confidence reached {int(conf*100)}% at {dist:.1f}m): {target['id']} at X: {target['x']:+.2f}m, Y: {target['y']:+.2f}m - Marked VISITED! ({self.inspected_count}/{len(self.deers)})"
-                            print(f"[AUTONOMY] {log_msg}")
-                            add_system_log("DEER_VISITED", log_msg)
-
-                            remaining = [i for i, deer_obj in enumerate(self.deers) if not deer_obj["visited"]]
-                            if len(remaining) > 0:
-                                self.fsm_state = "SECTOR_TRACK"
-                                self.fsm_timer = now
-                                self.active_target_idx = None
-                                print(f"[AUTONOMY] Target #{self.inspected_count} cataloged. Pivoting to search for next deer...")
-                            else:
-                                self.fsm_state = "ALL_DEERS_CATALOGED"
-                                self.v = 0.0
-                                self.w = 0.0
-                                self.all_deers_cataloged_announced = True
-                                coords_summary = " | ".join([f"{deer_obj['id']}: (X: {deer_obj['x']:+.2f}m, Y: {deer_obj['y']:+.2f}m)" for deer_obj in self.deers])
-                                print(f"\n[MISSION COMPLETE] ALL {len(self.deers)} DEERS FOUND! Final Coordinates: {coords_summary}\n")
-                                add_system_log("ALL_VISITED", f"ALL {len(self.deers)} DEERS CATALOGED! Coordinates: {coords_summary}")
-                    else:
-                        self.fsm_state = "SECTOR_SCAN"
+                elif self.fsm_state == "TARGET_VERIFICATION":
+                    # Stop and perform inspection
+                    self.v = 0.0
+                    self.w = 0.0
+                    if now - self.fsm_timer > 3.0:
+                        self.inspected_count += 1
+                        self.fsm_state = "SECTOR_TRACK"
+                        self.fsm_timer = now
+                        print(f"[AUTONOMY] Verification Complete (#{self.inspected_count}). Transition: VERIFICATION -> SECTOR_TRACK")
 
                 elif self.fsm_state == "SECTOR_TRACK":
-                    # Pivot away from just-visited deer to face new sector
-                    self.v = 0.0
-                    self.w = 0.52
-                    if now - self.fsm_timer > 1.8:
+                    # Track for 4 seconds then resume scanning
+                    self.v = 0.05
+                    self.w = -angle_err * 0.8
+                    if now - self.fsm_timer > 4.0:
                         self.fsm_state = "SECTOR_SCAN"
                         self.fsm_timer = now
-                        print("[AUTONOMY] Resuming SECTOR_SCAN for next deer.")
+                        print("[AUTONOMY] Sector Cleared. Resuming SECTOR_SCAN.")
 
-            # Apply kinematics
+            # Apply kinematics:
+            # Turning: w > 0 turns Left (yaw increases), w < 0 turns Right (yaw decreases)
             self.yaw = (self.yaw + self.w * dt) % (2 * math.pi)
             self.rx += (-self.v * math.sin(self.yaw)) * dt
             self.ry += (self.v * math.cos(self.yaw)) * dt
@@ -462,23 +296,23 @@ class VirtualForestSimulation:
             b = int(25 + 15 * factor)
             frame[y, :] = (b, g, r)
 
-        # 2. Forest Green Grass Ground Plane (Clean Green Grass)
+        # 2. Forest Floor Ground Plane (Rich Woodland Camouflage Palette)
         horizon_y = 210
         for y in range(horizon_y, h):
             depth_f = (y - horizon_y) / float(h - horizon_y)
-            # Clean forest green grass
-            r = int(18 + 24 * depth_f)
-            g = int(45 + 50 * depth_f)
-            b = int(14 + 18 * depth_f)
+            # Woodland forest floor: rich loam brown with moss & fallen needle undertones
+            r = int(32 + 34 * depth_f)
+            g = int(36 + 32 * depth_f)
+            b = int(20 + 20 * depth_f)
             frame[y, :] = (b, g, r)
 
-        # Moving perspective ground lines in subtle green
+        # Moving perspective ground lines (shift as robot moves)
         grid_offset_y = int((self.ry * 50) % 35)
         for gy in range(horizon_y + 10, h, 35):
             curr_gy = gy + grid_offset_y
             if curr_gy < h:
                 alpha = (curr_gy - horizon_y) / float(h - horizon_y)
-                color = (int(16 + 18 * alpha), int(42 + 30 * alpha), int(15 + 18 * alpha))
+                color = (int(28 + 18 * alpha), int(42 + 25 * alpha), int(38 + 22 * alpha))
                 cv2.line(frame, (0, curr_gy), (w, curr_gy), color, 1)
 
         # Perspective radial lines
@@ -486,7 +320,7 @@ class VirtualForestSimulation:
         for gx in range(-w, w * 2, 80):
             screen_gx = int(gx + yaw_offset)
             if -100 < screen_gx < w + 100:
-                cv2.line(frame, (screen_gx, horizon_y), (int(320 + (screen_gx - 320) * 2.8), h), (18, 48, 20), 1)
+                cv2.line(frame, (screen_gx, horizon_y), (int(320 + (screen_gx - 320) * 2.8), h), (26, 40, 36), 1)
 
         # 3. Depth-Sorted Rendering Queue (Painter's Algorithm for Natural Tree Occlusion)
         render_queue = []
@@ -515,44 +349,41 @@ class VirtualForestSimulation:
                         'base_y': base_y
                     })
 
-        # Project All Camouflaged Deers in Sector
+        # Project Camouflaged Deer
+        dx = self.deer_x - self.rx
+        dy = self.deer_y - self.ry
+        target_dist = math.sqrt(dx * dx + dy * dy)
+        rel_forward = -dx * math.sin(self.yaw) + dy * math.cos(self.yaw)
+        rel_lateral = dx * math.cos(self.yaw) + dy * math.sin(self.yaw)
+
         target_detected = False
         target_info = None
 
-        for d_idx, deer in enumerate(self.deers):
-            dx = deer['x'] - self.rx
-            dy = deer['y'] - self.ry
-            target_dist = math.sqrt(dx * dx + dy * dy)
-            rel_forward = -dx * math.sin(self.yaw) + dy * math.cos(self.yaw)
-            rel_lateral = dx * math.cos(self.yaw) + dy * math.sin(self.yaw)
+        if rel_forward > 0.8:  # Target is in front of camera lens
+            focal_len = 340.0
+            screen_cx = int(320 + (rel_lateral / rel_forward) * focal_len)
+            screen_cy = int(horizon_y + (0.2 / rel_forward) * focal_len)
+            sprite_w = int((1.35 / rel_forward) * focal_len)
+            sprite_h = int((1.10 / rel_forward) * focal_len)
 
-            if rel_forward > 0.8:
-                focal_len = 340.0
-                screen_cx = int(320 + (rel_lateral / rel_forward) * focal_len)
-                screen_cy = int(horizon_y + (0.2 / rel_forward) * focal_len)
-                sprite_w = int((1.35 / rel_forward) * focal_len)
-                sprite_h = int((1.10 / rel_forward) * focal_len)
+            if 20 < screen_cx < (w - 20) and sprite_w > 12 and sprite_h > 12:
+                x1 = max(0, screen_cx - sprite_w // 2)
+                y1 = max(0, screen_cy - sprite_h)
+                x2 = min(w, x1 + sprite_w)
+                y2 = min(h, y1 + sprite_h)
+                actual_w = x2 - x1
+                actual_h = y2 - y1
 
-                if 20 < screen_cx < (w - 20) and sprite_w > 12 and sprite_h > 12:
-                    x1 = max(0, screen_cx - sprite_w // 2)
-                    y1 = max(0, screen_cy - sprite_h)
-                    x2 = min(w, x1 + sprite_w)
-                    y2 = min(h, y1 + sprite_h)
-                    actual_w = x2 - x1
-                    actual_h = y2 - y1
-
-                    if actual_w > 5 and actual_h > 5:
-                        render_queue.append({
-                            'kind': 'deer',
-                            'depth': rel_forward,
-                            'screen_cx': screen_cx,
-                            'screen_cy': screen_cy,
-                            'x1': x1, 'y1': y1, 'x2': x2, 'y2': y2,
-                            'actual_w': actual_w, 'actual_h': actual_h,
-                            'target_dist': target_dist,
-                            'deer_data': deer,
-                            'deer_idx': d_idx
-                        })
+                if actual_w > 5 and actual_h > 5:
+                    render_queue.append({
+                        'kind': 'deer',
+                        'depth': rel_forward,
+                        'screen_cx': screen_cx,
+                        'screen_cy': screen_cy,
+                        'x1': x1, 'y1': y1, 'x2': x2, 'y2': y2,
+                        'actual_w': actual_w, 'actual_h': actual_h,
+                        'target_dist': target_dist
+                    })
 
         # Sort all objects from furthest to closest (descending depth)
         render_queue.sort(key=lambda obj: obj['depth'], reverse=True)
@@ -565,10 +396,12 @@ class VirtualForestSimulation:
                 tree_w = entity['tree_w']
                 base_y = entity['base_y']
 
+                # Realistic woodland trunk (bark brown)
                 trunk_w = max(5, tree_w // 4)
                 cv2.rectangle(frame, (scx - trunk_w // 2, base_y - tree_h // 2),
                               (scx + trunk_w // 2, base_y), (22, 38, 52), -1)
 
+                # Foliage / Canopy layers (deep forest greens)
                 canopy_r = max(12, tree_w)
                 canopy_cy = max(30, base_y - tree_h + canopy_r // 2)
                 cv2.circle(frame, (scx, canopy_cy), canopy_r, (18, 48, 28), -1)
@@ -582,7 +415,6 @@ class VirtualForestSimulation:
                 actual_w, actual_h = entity['actual_w'], entity['actual_h']
                 screen_cx, screen_cy = entity['screen_cx'], entity['screen_cy']
                 target_dist = entity['target_dist']
-                deer_info = entity['deer_data']
 
                 deer_resized = cv2.resize(self.deer_sprite, (actual_w, actual_h))
                 mask_resized = cv2.resize(self.deer_mask, (actual_w, actual_h))
@@ -593,49 +425,48 @@ class VirtualForestSimulation:
                 fg = cv2.bitwise_and(deer_resized, deer_resized, mask=mask_resized)
                 frame[y1:y2, x1:x2] = cv2.add(bg, fg)
 
-                # Simulated camouflage classification confidence
-                conf = max(0.40, min(0.92, 0.88 - (target_dist * 0.038)))
+                # 4. Tactical AI Perception Bounding Box & HUD Lock
+                target_detected = True
+                conf = max(0.50, min(0.92, 0.88 - (target_dist * 0.038)))
 
-                # Classification Threshold Check
-                if conf >= self.classification_threshold:
-                    target_detected = True
-                    is_visited = deer_info.get('visited', False)
+                # Tactical Neon Green Bounding Box
+                box_color = (0, 255, 128)
+                cv2.rectangle(frame, (x1 - 4, y1 - 4), (x2 + 4, y2 + 4), box_color, 2)
 
-                    # Bounding Box Color: Cyan if already visited, Neon Green if active / unvisited
-                    box_color = (255, 200, 0) if is_visited else (0, 255, 128)
-                    cv2.rectangle(frame, (x1 - 4, y1 - 4), (x2 + 4, y2 + 4), box_color, 2)
+                # Reticle Corner Brackets
+                bracket_len = max(8, min(20, actual_w // 4))
+                # Top-left
+                cv2.line(frame, (x1 - 4, y1 - 4), (x1 - 4 + bracket_len, y1 - 4), (255, 255, 255), 2)
+                cv2.line(frame, (x1 - 4, y1 - 4), (x1 - 4, y1 - 4 + bracket_len), (255, 255, 255), 2)
+                # Top-right
+                cv2.line(frame, (x2 + 4, y1 - 4), (x2 + 4 - bracket_len, y1 - 4), (255, 255, 255), 2)
+                cv2.line(frame, (x2 + 4, y1 - 4), (x2 + 4, y1 - 4 + bracket_len), (255, 255, 255), 2)
+                # Bottom-left
+                cv2.line(frame, (x1 - 4, y2 + 4), (x1 - 4 + bracket_len, y2 + 4), (255, 255, 255), 2)
+                cv2.line(frame, (x1 - 4, y2 + 4), (x1 - 4, y2 + 4 - bracket_len), (255, 255, 255), 2)
+                # Bottom-right
+                cv2.line(frame, (x2 + 4, y2 + 4), (x2 + 4 - bracket_len, y2 + 4), (255, 255, 255), 2)
+                cv2.line(frame, (x2 + 4, y2 + 4), (x2 + 4, y2 + 4 - bracket_len), (255, 255, 255), 2)
 
-                    # Corner Brackets
-                    bracket_len = max(8, min(20, actual_w // 4))
-                    cv2.line(frame, (x1 - 4, y1 - 4), (x1 - 4 + bracket_len, y1 - 4), (255, 255, 255), 2)
-                    cv2.line(frame, (x1 - 4, y1 - 4), (x1 - 4, y1 - 4 + bracket_len), (255, 255, 255), 2)
-                    cv2.line(frame, (x2 + 4, y1 - 4), (x2 + 4 - bracket_len, y1 - 4), (255, 255, 255), 2)
-                    cv2.line(frame, (x2 + 4, y1 - 4), (x2 + 4, y1 - 4 + bracket_len), (255, 255, 255), 2)
-                    cv2.line(frame, (x1 - 4, y2 + 4), (x1 - 4 + bracket_len, y2 + 4), (255, 255, 255), 2)
-                    cv2.line(frame, (x1 - 4, y2 + 4), (x1 - 4, y2 + 4 - bracket_len), (255, 255, 255), 2)
-                    cv2.line(frame, (x2 + 4, y2 + 4), (x2 + 4 - bracket_len, y2 + 4), (255, 255, 255), 2)
-                    cv2.line(frame, (x2 + 4, y2 + 4), (x2 + 4, y2 + 4 - bracket_len), (255, 255, 255), 2)
+                # Center crosshair
+                ccx, ccy = (x1 + x2) // 2, (y1 + y2) // 2
+                cv2.line(frame, (ccx - 8, ccy), (ccx + 8, ccy), (0, 255, 128), 1)
+                cv2.line(frame, (ccx, ccy - 8), (ccx, ccy + 8), (0, 255, 128), 1)
 
-                    # Label with Coordinates
-                    status_badge = "VISITED" if is_visited else f"{int(conf * 100)}%"
-                    label_str = f"{deer_info['id']} [{status_badge}] X:{deer_info['x']:+.1f} Y:{deer_info['y']:+.1f} [{target_dist:.1f}m]"
-                    (tw, th), _ = cv2.getTextSize(label_str, cv2.FONT_HERSHEY_SIMPLEX, 0.40, 1)
-                    badge_bg = (180, 100, 0) if is_visited else (0, 180, 80)
-                    cv2.rectangle(frame, (x1 - 4, max(18, y1 - 22)), (x1 + tw + 6, max(22, y1 - 2)), badge_bg, -1)
-                    cv2.putText(frame, label_str, (x1 - 1, max(16, y1 - 7)),
-                                cv2.FONT_HERSHEY_SIMPLEX, 0.40, (0, 0, 0), 1, cv2.LINE_AA)
+                # Bounding Box Label
+                label_str = f"DEER {int(conf * 100)}% [{target_dist:.1f}m]"
+                (tw, th), _ = cv2.getTextSize(label_str, cv2.FONT_HERSHEY_SIMPLEX, 0.48, 1)
+                cv2.rectangle(frame, (x1 - 4, max(18, y1 - 22)), (x1 + tw + 6, max(22, y1 - 2)), (0, 180, 80), -1)
+                cv2.putText(frame, label_str, (x1 - 1, max(16, y1 - 7)),
+                            cv2.FONT_HERSHEY_SIMPLEX, 0.48, (0, 0, 0), 1, cv2.LINE_AA)
 
-                    if target_info is None or target_dist < target_info.get('distance_m', 999.0):
-                        target_info = {
-                            "label": deer_info['id'],
-                            "confidence": float(round(conf, 3)),
-                            "distance_m": float(round(target_dist, 2)),
-                            "center_x": float(screen_cx),
-                            "center_y": float(screen_cy),
-                            "target_x": float(deer_info['x']),
-                            "target_y": float(deer_info['y']),
-                            "visited": is_visited
-                        }
+                target_info = {
+                    "label": "DEER",
+                    "confidence": float(round(conf, 3)),
+                    "distance_m": float(round(target_dist, 2)),
+                    "center_x": float(screen_cx),
+                    "center_y": float(screen_cy)
+                }
 
         # 6. Compass Heading Tape (Tactical HUD Overlay)
         heading_deg = int((-self.yaw * 180.0 / math.pi) % 360)
@@ -651,19 +482,11 @@ class VirtualForestSimulation:
             latest_telemetry["fps"] = 25.0
             latest_telemetry["inference_time_ms"] = 32.4
             latest_telemetry["target_acquired"] = target_detected
-            latest_telemetry["target_count"] = sum(1 for d in self.deers if d['visited'])
+            latest_telemetry["target_count"] = 1 if target_detected else 0
             latest_telemetry["primary_target"] = target_info
             latest_telemetry["fsm_state"] = self.fsm_state if self.autonomy else "MANUAL_TELEOP"
             latest_telemetry["inspected_count"] = self.inspected_count
             latest_telemetry["mode"] = "WINDOWS_SIM"
-            latest_telemetry["total_deers"] = len(self.deers)
-            latest_telemetry["visited_deers"] = [d for d in self.deers if d['visited']]
-            latest_telemetry["all_deers"] = [dict(d) for d in self.deers]
-            latest_telemetry["all_visited"] = all(d['visited'] for d in self.deers)
-            latest_telemetry["classification_threshold"] = self.classification_threshold
-            if self.just_visited_deer is not None:
-                latest_telemetry["just_visited"] = self.just_visited_deer
-                self.just_visited_deer = None
 
         return frame
 
@@ -875,30 +698,6 @@ def video_feed():
     return Response(video_stream_generator(), mimetype='multipart/x-mixed-replace; boundary=frame')
 
 
-
-@app.route('/api/deers/catalog', methods=['GET'])
-def get_deer_catalog():
-    with sim_engine.lock:
-        deers_copy = [dict(d) for d in sim_engine.deers]
-        total = len(deers_copy)
-        visited = sum(1 for d in deers_copy if d.get('visited', False))
-        threshold = sim_engine.classification_threshold
-    return jsonify({
-        "status": "ok",
-        "total": total,
-        "visited_count": visited,
-        "all_visited": visited == total,
-        "threshold": threshold,
-        "deers": deers_copy
-    })
-
-
-@app.route('/api/deers/reset', methods=['POST'])
-def reset_deer_catalog():
-    sim_engine.reset_deers()
-    add_system_log("CATALOG", "Deer detection catalog reset. Ready for new search.")
-    return jsonify({"status": "reset", "message": "Deer catalog reset."})
-
 @app.route('/api/telemetry', methods=['GET'])
 def get_telemetry():
     with state_lock:
@@ -932,15 +731,6 @@ def send_cmd_vel():
         elif angular_z < 0: direction.append("Turn Right")
         dir_str = " + ".join(direction) if direction else "Steering"
         add_system_log("TELEOP", f"Manual Driving: {dir_str} (lin={linear_x:.2f} m/s, ang={angular_z:.2f} rad/s)")
-
-    # If manual velocity commanded, guarantee complete user control (no fighting background autonomy)
-    if (abs(linear_x) > 0.01 or abs(angular_z) > 0.01):
-        if sim_engine.autonomy:
-            sim_engine.set_autonomy(False)
-        if active_processes.get("patrol") is not None:
-            kill_process_tree(active_processes["patrol"])
-            active_processes["patrol"] = None
-            add_system_log("AUTONOMY", "Manual teleop override: Autonomous patrol paused. 100% user control active.")
 
     # Pass to ROS 2 if available
     if ros_backend:
@@ -1022,7 +812,6 @@ def start_simulation():
             return jsonify({"status": "error", "message": f"ROS 2 launch failed: {e}"}), 500
     else:
         # Running natively on Windows without ROS 2: Launch Windows Interactive Simulator
-        sim_engine.reset_deers()
         sim_engine.start()
         add_system_log("SYSTEM", "Windows Native Interactive Simulation mode started.")
         return jsonify({
@@ -1121,8 +910,12 @@ def regenerate_world():
     seed = data.get('seed', '42')
 
     # Update Windows simulation deer position based on seed
-    sim_engine.reset_deers(seed=seed)
-    add_system_log("WORLD", f"World regenerated with Seed {seed}. Deer positions randomized and catalog reset.")
+    try:
+        s_int = int(seed)
+        sim_engine.deer_x = float(((s_int * 7) % 9) - 4.5)
+        sim_engine.deer_y = float(3.5 + ((s_int * 13) % 7))
+    except Exception:
+        pass
 
     script_path = os.path.join(
         os.path.dirname(os.path.dirname(os.path.abspath(__file__))),

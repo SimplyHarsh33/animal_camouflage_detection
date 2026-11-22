@@ -32,20 +32,12 @@ class AutonomousPatrolNode(Node):
         # Parameters
         self.declare_parameter('scan_speed', 0.58)       # rad/s for 360 scan (optimized for responsive scanning)
         self.declare_parameter('forward_speed', 0.24)    # m/s for exploration
-        self.declare_parameter('stop_distance', 2.6)     # meters to hold inspection
-        self.declare_parameter('classification_threshold', 0.65) # 65% confidence threshold to instantly catalog deer
-        self.declare_parameter('expected_targets', 3)    # Total camouflaged deers in sector
+        self.declare_parameter('stop_distance', 3.0)     # meters to hold inspection
         self.declare_parameter('auto_start', True)
 
         self.scan_speed = self.get_parameter('scan_speed').get_parameter_value().double_value
         self.forward_speed = self.get_parameter('forward_speed').get_parameter_value().double_value
         self.stop_distance = self.get_parameter('stop_distance').get_parameter_value().double_value
-        self.classification_threshold = self.get_parameter('classification_threshold').get_parameter_value().double_value
-        self.expected_targets = self.get_parameter('expected_targets').get_parameter_value().integer_value
-
-        # Visited deers catalog
-        self.visited_targets = []
-        self.all_targets_cataloged = False
 
         # Publishers & Subscribers
         self.cmd_vel_pub = self.create_publisher(Twist, '/animal_robot/cmd_vel', 10)
@@ -108,76 +100,54 @@ class AutonomousPatrolNode(Node):
         recent_target = (time_since_target < 0.8) and (self.primary_target is not None)
 
         # ==========================================================
-        # STATE: TRACK_TARGET (Advance Toward Deer to Increase Confidence -> Catalog at 65%)
+        # STATE: TRACK_TARGET (Visual Servoing to Center & Inspect)
         # ==========================================================
         if recent_target and self.primary_target is not None:
-            conf = float(self.primary_target.get('confidence', 0.0))
-            cx = self.primary_target.get('center_x', self.image_center_x)
-            dist = float(self.primary_target.get('distance_m', 5.0))
-            error_x = self.image_center_x - cx
-            bearing_rad = (error_x / self.image_center_x) * 0.70
-            bearing_deg = round(math.degrees(bearing_rad), 1)
-
-            # Check if 65%+ confidence reached or close range reached
-            if conf >= self.classification_threshold or (self.state == self.STATE_TRACK_TARGET and dist <= self.stop_distance):
-                # Target achieved >= 65% confidence: Immediately catalog and mark as visited!
-                self.inspected_targets_count += 1
-                deer_record = {
-                    "id": f"DEER-{self.inspected_targets_count:02d}",
-                    "confidence": conf,
-                    "distance_m": dist,
-                    "bearing_deg": bearing_deg,
-                    "time": time.strftime('%H:%M:%S')
-                }
-                self.visited_targets.append(deer_record)
+            if self.state != self.STATE_TRACK_TARGET:
                 self.get_logger().info(
-                    f'✅ [CONFIDENCE GOAL REACHED >=65%] ID: {deer_record["id"]} verified at {dist:.1f}m | '
-                    f'Bearing: {bearing_deg}° | Confidence: {int(conf * 100)}% '
-                    f'({len(self.visited_targets)}/{self.expected_targets} Cataloged)'
+                    f'🦌 TARGET SPOTTED! Locking on {self.primary_target.get("label", "TARGET")} '
+                    f'at estimated distance {self.primary_target.get("distance_m", 0.0)}m'
                 )
-
-                # If all targets have been cataloged, print all at once and halt
-                if len(self.visited_targets) >= self.expected_targets:
-                    all_summary = " | ".join([
-                        f"{t['id']} (Dist: {t['distance_m']:.1f}m, Bearing: {t['bearing_deg']}°, Conf: {int(t['confidence'] * 100)}%, Time: {t['time']})"
-                        for t in self.visited_targets
-                    ])
-                    self.get_logger().info('============================================================')
-                    self.get_logger().info(f'🏆 ALL {len(self.visited_targets)} DEERS CLASSIFIED & CATALOGED!')
-                    self.get_logger().info(f'All Targets Summary: {all_summary}')
-                    self.get_logger().info('============================================================')
-                    self.all_targets_cataloged = True
-                    self.publish_cmd(0.0, 0.0)
-                    return
-
-                # Immediately pivot and move on to find the next deer
-                self.get_logger().info(f'Target {deer_record["id"]} cataloged. Pivoting to search for next deer...')
-                self.state = self.STATE_TURN_BOUNCE
+                self.state = self.STATE_TRACK_TARGET
                 self.state_start_time = now
                 self.inspection_start_time = None
-                self.primary_target = None
-                self.publish_cmd(0.0, 0.65)
-                return
-            else:
-                # Confidence is below 65%: Move toward the deer to increase confidence!
-                if self.state != self.STATE_TRACK_TARGET:
-                    self.get_logger().info(
-                        f'🦌 DEER DETECTED at initial {int(conf * 100)}% conf (dist: {dist:.1f}m). '
-                        f'Advancing toward deer to increase confidence to 65%...'
-                    )
-                    self.state = self.STATE_TRACK_TARGET
-                    self.state_start_time = now
 
-                # Visual servoing: center deer in camera frame and approach
-                angular_z = float(self.kp_steer * error_x)
-                angular_z = max(min(angular_z, 0.65), -0.65)
-                linear_x = self.forward_speed
+            cx = self.primary_target['center_x']
+            dist = self.primary_target['distance_m']
+            error_x = self.image_center_x - cx
+
+            # Proportional angular steering to keep target centered in FOV
+            angular_z = float(self.kp_steer * error_x)
+            angular_z = max(min(angular_z, 0.65), -0.65)
+
+            # Approach or Hold Position
+            if dist > self.stop_distance:
+                linear_x = self.forward_speed * 0.7  # Cautious approach
+                self.inspection_start_time = None
                 self.publish_cmd(linear_x, angular_z)
-                return
+            else:
+                # Target in optimal range - halt and inspect
+                linear_x = 0.0
+                angular_z = float(self.kp_steer * error_x * 0.5)  # Fine centering only
+                self.publish_cmd(linear_x, angular_z)
 
-        # If all targets have already been cataloged, remain halted
-        if self.all_targets_cataloged:
-            self.publish_cmd(0.0, 0.0)
+                if self.inspection_start_time is None:
+                    self.inspection_start_time = now
+                    self.inspected_targets_count += 1
+                    self.get_logger().info(
+                        f'🎯 [VISUAL LOCK CONFIRMED] Holding inspection at {dist:.1f}m '
+                        f'(Target #{self.inspected_targets_count})'
+                    )
+
+                # Hold inspection for 5 seconds, then resume search
+                if (now - self.inspection_start_time) > 5.0:
+                    self.get_logger().info(
+                        f'✅ Inspection of Target #{self.inspected_targets_count} complete. Resuming patrol...'
+                    )
+                    self.state = self.STATE_TURN_BOUNCE
+                    self.state_start_time = now
+                    self.inspection_start_time = None
+                    self.primary_target = None
             return
 
         # If target was lost while tracking, give genuine 1.5s grace period before resuming scan
@@ -207,13 +177,14 @@ class AutonomousPatrolNode(Node):
             return
 
         # ==========================================================
-        # STATE: EXPLORE_CREEP (Straight Forward Creep - Completely Stable Camera)
+        # STATE: EXPLORE_CREEP (Forward Motion with FOV S-Curve Weave)
         # ==========================================================
         if self.state == self.STATE_EXPLORE_CREEP:
-            max_creep_time = 7.0  # Creep forward for 7 seconds
+            max_creep_time = 9.0  # Creep forward for 9 seconds (~2.0 meters)
             if state_elapsed < max_creep_time:
-                # Completely straight forward movement without involuntary camera rotation
-                self.publish_cmd(self.forward_speed, 0.0)
+                # Subtle sinusoidal weave (0.12 rad/s) widens effective camera field of view
+                weave = 0.14 * math.sin(state_elapsed * 1.5)
+                self.publish_cmd(self.forward_speed, weave)
             else:
                 self.get_logger().info('Exploration leg complete. Initiating localized scan...')
                 self.state = self.STATE_SCAN_SWEEP
