@@ -281,9 +281,9 @@ def main():
         hsv_v       = 0.4,                   # brightness — dawn/dusk vs midday lighting
         # Composition
         mosaic      = 1.0,                   # 4-image mosaic (all epochs except last N)
-        mixup       = 0.15,                  # partial occlusion hardening
+        mixup       = 0.1,                   # mild mixup for subtle blending
         copy_paste  = 0.1,                   # paste deer silhouette onto new background
-        erasing     = 0.4,                   # randomly erase parts of deer → texture learning
+        erasing     = 0.1,                   # light random erasing (0.4 was too aggressive for camouflage)
         close_mosaic = 10,                   # disable mosaic for last 10 epochs
 
         # ── Training control ───────────────────────────────────
@@ -299,7 +299,7 @@ def main():
         exist_ok    = True,
 
         # ── Misc ──────────────────────────────────────────────
-        single_cls  = True,                  # treat all detections as class 0 (deer only)
+        single_cls  = False,                 # False preserves 'deer' class name from data.yaml (avoids 'item')
         verbose     = True,
         amp         = True,                  # Automatic Mixed Precision (FP16) → halves VRAM use
     )

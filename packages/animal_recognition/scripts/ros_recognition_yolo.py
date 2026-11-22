@@ -195,7 +195,13 @@ class CamouflageDetectionNode(Node):
                             if cls_name in self.noise_coco_classes and conf < 0.65:
                                 continue
 
-                            is_wildlife_target = (cls_name in self.ungulate_coco_classes) or (cls_name == self.target_animal)
+                            # Check if model is a custom fine-tuned single-class detector (e.g. deer)
+                            is_single_class_model = hasattr(self.model, 'names') and len(self.model.names) == 1
+                            is_wildlife_target = (
+                                is_single_class_model
+                                or (cls_name in self.ungulate_coco_classes)
+                                or (cls_name in [self.target_animal, 'item'])
+                            )
                             label_name = self.target_animal.upper() if is_wildlife_target else cls_name.upper()
 
                             bbox_h = max(float(xyxy[3] - xyxy[1]), 1.0)

@@ -18,11 +18,11 @@ class DatasetCollectorNode(Node):
         super().__init__('dataset_collector_node')
 
         script_dir = os.path.dirname(os.path.abspath(__file__))
-        default_out = '/workspace/training/dataset/images/train' if os.path.exists('/workspace') else os.path.join(script_dir, 'dataset', 'images', 'train')
+        default_out = '/workspace/training/dataset/images/raw_captures' if os.path.exists('/workspace') else os.path.join(script_dir, 'dataset', 'images', 'raw_captures')
 
         self.declare_parameter('output_dir', default_out)
-        self.declare_parameter('prefix', 'deer_camou')
-        self.declare_parameter('auto_interval_sec', 0.5) # 0 to disable auto capture
+        self.declare_parameter('prefix', 'deer_capture')
+        self.declare_parameter('auto_interval_sec', 0.0) # 0 = disabled by default
 
         self.output_dir = self.get_parameter('output_dir').get_parameter_value().string_value
         self.prefix = self.get_parameter('prefix').get_parameter_value().string_value
