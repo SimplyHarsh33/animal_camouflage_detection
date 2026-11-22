@@ -1,5 +1,5 @@
 # YOLOv8 Camouflage Dataset Configuration
-path: .
+path: /home/kali/Desktop/animal_camouflage_detection/training/dataset
 train: images/train
 val: images/val
 
