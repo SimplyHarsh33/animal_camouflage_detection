@@ -41,7 +41,6 @@ latest_telemetry = {
     "inference_time_ms": 0.0,
     "target_acquired": False,
     "target_count": 0,
-    "targets": [],
     "primary_target": None,
     "fsm_state": "STANDBY",
     "inspected_count": 0,
@@ -95,10 +94,9 @@ except ImportError:
 # ==============================================================================
 class VirtualForestSimulation:
     """
-    High-fidelity interactive multi-animal jungle simulator for Windows users.
-    Simulates robot motion, monocular camera projection, camouflaged wildlife
-    (Deer, Leopard, Snake, Fox), tactical multi-target YOLO bounding boxes,
-    and multi-target autonomous patrol finite state machine.
+    High-fidelity interactive robot simulator for Windows users without ROS 2/Gazebo.
+    Simulates robot motion, monocular camera projection, camouflaged animals,
+    YOLO bounding boxes, and autonomous patrol finite state machine.
     """
     def __init__(self):
         self.running = False
@@ -116,242 +114,63 @@ class VirtualForestSimulation:
         self.fsm_state = "SECTOR_SCAN"
         self.fsm_timer = 0.0
         self.inspected_count = 0
-        self.current_target_id = None
-        self.last_inspected_id = None
         
-        # Multi-Animal Camouflage Biome in the Jungle
-        # Arranged so that looking forward from spawn (0,0), multiple animals
-        # fall within the camera's ~80 deg field of view simultaneously!
-        self.animals = [
-            {
-                "id": "deer_1",
-                "species": "DEER",
-                "label": "DEER",
-                "icon": "🦌",
-                "x": 0.9,
-                "y": 4.8,
-                "scale_w": 1.30,
-                "scale_h": 1.05,
-                "z_off": 0.20,
-                "box_color": (0, 255, 128),     # Tactical Neon Green
-                "base_conf": 0.88,
-                "camouflage_type": "Tawny Bark Crypsis",
-                "texture_key": "deer"
-            },
-            {
-                "id": "leopard_1",
-                "species": "LEOPARD",
-                "label": "LEOPARD",
-                "icon": "🐆",
-                "x": -2.6,
-                "y": 5.2,
-                "scale_w": 1.45,
-                "scale_h": 0.85,
-                "z_off": 0.12,
-                "box_color": (0, 160, 255),    # Predator Amber
-                "base_conf": 0.82,
-                "camouflage_type": "Rosette Shadow Spotting",
-                "texture_key": "leopard"
-            },
-            {
-                "id": "snake_1",
-                "species": "SNAKE",
-                "label": "SNAKE",
-                "icon": "🐍",
-                "x": 2.5,
-                "y": 3.7,
-                "scale_w": 0.85,
-                "scale_h": 0.45,
-                "z_off": -0.05,
-                "box_color": (0, 220, 255),    # Scaled Gold
-                "base_conf": 0.76,
-                "camouflage_type": "Rock Scaled Pattern",
-                "texture_key": "snake"
-            },
-            {
-                "id": "fox_1",
-                "species": "FOX",
-                "label": "FOX",
-                "icon": "🦊",
-                "x": -0.8,
-                "y": 7.8,
-                "scale_w": 1.05,
-                "scale_h": 0.70,
-                "z_off": 0.14,
-                "box_color": (30, 120, 255),   # Crimson Orange
-                "base_conf": 0.84,
-                "camouflage_type": "Amber Brush Crypsis",
-                "texture_key": "fox"
-            }
-        ]
+        # World Objects
+        self.deer_x = 0.0
+        self.deer_y = 5.2
+        self.leopard_x = -3.8
+        self.leopard_y = 7.5
         
-        # Companion Natural Cover (Rocks and Trees placed around the jungle)
-        self.rocks = [
-            (2.7, 3.8, 0.85),    # near snake
-            (-3.0, 5.5, 0.95),   # near leopard
-            (-3.5, 7.5, 1.20),
-            (3.2, 6.8, 1.00),
-            (0.0, 9.5, 1.10)
-        ]
-        
+        # Trees
         self.trees = [
-            (1.5, 5.4, 'oak'),   # near deer
-            (-3.2, 5.0, 'pine'),  # near leopard
-            (-2.5, 4.0, 'pine'),
-            (2.8, 4.8, 'oak'),
-            (-4.0, 7.0, 'oak'),
-            (3.5, 8.5, 'pine'),
-            (-1.5, 9.5, 'oak'),
-            (2.0, 11.0, 'pine'),
-            (-3.5, 12.0, 'oak'),
-            (4.0, 13.5, 'pine')
+            (-2.5, 4.0), (2.8, 4.8), (-4.0, 7.0), (3.5, 8.5),
+            (-1.5, 9.5), (2.0, 11.0), (-3.5, 12.0), (4.0, 13.5)
         ]
         
-        # Pre-render animal and environmental assets
-        self.assets = {}
-        self._init_assets()
+        # Pre-render deer texture patch & mask
+        self._init_deer_assets()
 
-    def _init_assets(self):
+    def _init_deer_assets(self):
         root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-        
-        # 1. Deer Asset
         tex_path = os.path.join(root_dir, "models", "deer", "materials", "textures", "deer_texture.png")
         if not os.path.exists(tex_path):
             tex_path = os.path.join(root_dir, "models", "deer", "materials", "textures", "deer_basecolor.jpg")
+
         if os.path.exists(tex_path):
             raw_tex = cv2.imread(tex_path)
             raw_tex = cv2.resize(raw_tex, (320, 260))
         else:
             raw_tex = np.full((260, 320, 3), (45, 95, 155), dtype=np.uint8)
 
-        mask_deer = np.zeros((260, 320), dtype=np.uint8)
-        cv2.ellipse(mask_deer, (150, 140), (85, 48), 5, 0, 360, 255, -1)
-        cv2.circle(mask_deer, (90, 130), 42, 255, -1)
-        cv2.circle(mask_deer, (200, 135), 40, 255, -1)
+        # Build organic deer silhouette mask
+        mask = np.zeros((260, 320), dtype=np.uint8)
+        # Torso & hindquarters
+        cv2.ellipse(mask, (150, 140), (85, 48), 5, 0, 360, 255, -1)
+        cv2.circle(mask, (90, 130), 42, 255, -1)
+        cv2.circle(mask, (200, 135), 40, 255, -1)
+        # Neck & head
         pts_neck = np.array([[200, 130], [245, 65], [270, 80], [215, 155]], np.int32)
-        cv2.fillPoly(mask_deer, [pts_neck], 255)
-        cv2.ellipse(mask_deer, (260, 70), (30, 18), -20, 0, 360, 255, -1)
-        cv2.ellipse(mask_deer, (285, 75), (15, 11), -10, 0, 360, 255, -1)
-        cv2.ellipse(mask_deer, (250, 45), (9, 18), -25, 0, 360, 255, -1)
-        cv2.line(mask_deer, (245, 45), (235, 15), 255, 4)
-        cv2.line(mask_deer, (235, 25), (225, 18), 255, 3)
-        cv2.line(mask_deer, (250, 45), (255, 12), 255, 4)
-        cv2.line(mask_deer, (255, 22), (268, 16), 255, 3)
-        for p1, p2 in [[(85, 160), (80, 250)], [(110, 165), (105, 250)], [(195, 165), (190, 250)], [(220, 160), (215, 250)]]:
-            cv2.line(mask_deer, p1, p2, 255, 12)
-        self.assets["deer"] = (cv2.bitwise_and(raw_tex, raw_tex, mask=mask_deer), mask_deer)
+        cv2.fillPoly(mask, [pts_neck], 255)
+        cv2.ellipse(mask, (260, 70), (30, 18), -20, 0, 360, 255, -1)
+        cv2.ellipse(mask, (285, 75), (15, 11), -10, 0, 360, 255, -1)
+        cv2.ellipse(mask, (250, 45), (9, 18), -25, 0, 360, 255, -1)
+        # Antlers (subtle camouflage branches)
+        cv2.line(mask, (245, 45), (235, 15), 255, 4)
+        cv2.line(mask, (235, 25), (225, 18), 255, 3)
+        cv2.line(mask, (250, 45), (255, 12), 255, 4)
+        cv2.line(mask, (255, 22), (268, 16), 255, 3)
+        # Legs
+        legs = [
+            [(85, 160), (80, 250)],
+            [(110, 165), (105, 250)],
+            [(195, 165), (190, 250)],
+            [(220, 160), (215, 250)]
+        ]
+        for p1, p2 in legs:
+            cv2.line(mask, p1, p2, 255, 12)
 
-        # 2. Leopard Asset (Prowling stalking feline)
-        tex_path = os.path.join(root_dir, "models", "leopard", "materials", "textures", "leopard_texture.png")
-        if not os.path.exists(tex_path):
-            tex_path = os.path.join(root_dir, "models", "leopard", "materials", "textures", "leopard_basecolor.jpg")
-        if os.path.exists(tex_path):
-            raw_tex = cv2.imread(tex_path)
-            raw_tex = cv2.resize(raw_tex, (340, 220))
-        else:
-            raw_tex = np.full((220, 340, 3), (30, 140, 210), dtype=np.uint8)
-
-        mask_leo = np.zeros((220, 340), dtype=np.uint8)
-        cv2.ellipse(mask_leo, (160, 125), (95, 42), 0, 0, 360, 255, -1)
-        cv2.circle(mask_leo, (220, 125), 42, 255, -1)
-        cv2.circle(mask_leo, (95, 120), 38, 255, -1)
-        pts_neck_leo = np.array([[210, 115], [260, 85], [285, 105], [225, 145]], np.int32)
-        cv2.fillPoly(mask_leo, [pts_neck_leo], 255)
-        cv2.ellipse(mask_leo, (275, 95), (28, 20), -5, 0, 360, 255, -1)
-        cv2.ellipse(mask_leo, (295, 100), (16, 12), 0, 0, 360, 255, -1)
-        cv2.circle(mask_leo, (270, 75), 9, 255, -1)
-        cv2.circle(mask_leo, (290, 78), 8, 255, -1)
-        for p1, p2 in [[(95, 150), (90, 210)], [(125, 155), (120, 210)], [(205, 155), (200, 210)], [(235, 150), (230, 210)]]:
-            cv2.line(mask_leo, p1, p2, 255, 16)
-        pts_tail = np.array([[70, 125], [45, 105], [30, 80], [40, 65]], np.int32)
-        cv2.polylines(mask_leo, [pts_tail], False, 255, 12)
-        self.assets["leopard"] = (cv2.bitwise_and(raw_tex, raw_tex, mask=mask_leo), mask_leo)
-
-        # 3. Snake Asset (Coiled serpent with alert raised head)
-        tex_path = os.path.join(root_dir, "models", "snake", "materials", "textures", "snake_texture.png")
-        if os.path.exists(tex_path):
-            raw_tex = cv2.imread(tex_path)
-            raw_tex = cv2.resize(raw_tex, (260, 160))
-        else:
-            raw_tex = np.full((160, 260, 3), (40, 120, 70), dtype=np.uint8)
-
-        mask_snake = np.zeros((160, 260), dtype=np.uint8)
-        cv2.ellipse(mask_snake, (110, 115), (75, 28), -8, 0, 360, 255, -1)
-        cv2.ellipse(mask_snake, (140, 105), (55, 22), 12, 0, 360, 255, -1)
-        pts_neck_snk = np.array([[170, 100], [195, 65], [215, 68], [190, 110]], np.int32)
-        cv2.fillPoly(mask_snake, [pts_neck_snk], 255)
-        cv2.ellipse(mask_snake, (215, 62), (20, 12), -15, 0, 360, 255, -1)
-        cv2.ellipse(mask_snake, (230, 65), (10, 7), -10, 0, 360, 255, -1)
-        self.assets["snake"] = (cv2.bitwise_and(raw_tex, raw_tex, mask=mask_snake), mask_snake)
-
-        # 4. Fox Asset (Agile brush canine with bushy tail)
-        tex_path = os.path.join(root_dir, "models", "fox", "materials", "textures", "fox_basecolor.jpg")
-        if os.path.exists(tex_path):
-            raw_tex = cv2.imread(tex_path)
-            raw_tex = cv2.resize(raw_tex, (300, 220))
-        else:
-            raw_tex = np.full((220, 300, 3), (30, 90, 180), dtype=np.uint8)
-
-        mask_fox = np.zeros((220, 300), dtype=np.uint8)
-        cv2.ellipse(mask_fox, (140, 125), (70, 36), 0, 0, 360, 255, -1)
-        cv2.circle(mask_fox, (190, 120), 34, 255, -1)
-        cv2.circle(mask_fox, (95, 120), 32, 255, -1)
-        pts_neck_fox = np.array([[185, 115], [225, 65], [245, 80], [200, 135]], np.int32)
-        cv2.fillPoly(mask_fox, [pts_neck_fox], 255)
-        cv2.ellipse(mask_fox, (235, 70), (22, 16), -5, 0, 360, 255, -1)
-        pts_snout = np.array([[245, 72], [270, 78], [250, 84]], np.int32)
-        cv2.fillPoly(mask_fox, [pts_snout], 255)
-        pts_ear1 = np.array([[225, 60], [230, 32], [238, 58]], np.int32)
-        pts_ear2 = np.array([[242, 62], [250, 35], [255, 65]], np.int32)
-        cv2.fillPoly(mask_fox, [pts_ear1], 255)
-        cv2.fillPoly(mask_fox, [pts_ear2], 255)
-        cv2.ellipse(mask_fox, (55, 115), (45, 22), 35, 0, 360, 255, -1)
-        for p1, p2 in [[(85, 145), (80, 210)], [(110, 145), (105, 210)], [(180, 145), (175, 210)], [(205, 145), (200, 210)]]:
-            cv2.line(mask_fox, p1, p2, 255, 11)
-        self.assets["fox"] = (cv2.bitwise_and(raw_tex, raw_tex, mask=mask_fox), mask_fox)
-
-        # 5. Rock Asset
-        tex_path = os.path.join(root_dir, "models", "rock", "materials", "textures", "FallingRocks_Albedo.jpg")
-        if os.path.exists(tex_path):
-            raw_tex = cv2.imread(tex_path)
-            raw_tex = cv2.resize(raw_tex, (240, 180))
-        else:
-            raw_tex = np.full((180, 240, 3), (70, 80, 85), dtype=np.uint8)
-
-        mask_rock = np.zeros((180, 240), dtype=np.uint8)
-        pts_rock = np.array([[30, 140], [50, 80], [90, 40], [150, 35], [200, 70], [225, 120], [210, 160], [60, 165]], np.int32)
-        cv2.fillPoly(mask_rock, [pts_rock], 255)
-        self.assets["rock"] = (cv2.bitwise_and(raw_tex, raw_tex, mask=mask_rock), mask_rock)
-
-    def randomize_world(self, seed=42, biome='mixed'):
-        """Domain-randomizes animal coordinates and natural camouflage cover."""
-        try:
-            s = int(seed)
-        except Exception:
-            s = 42
-
-        with self.lock:
-            # Deterministic spread based on seed
-            self.animals[0]["x"] = float(((s * 3) % 7) - 3.2)     # Deer
-            self.animals[0]["y"] = float(4.2 + ((s * 5) % 4))
-            
-            self.animals[1]["x"] = float(((s * 7) % 8) - 4.0)     # Leopard
-            self.animals[1]["y"] = float(4.5 + ((s * 11) % 5))
-            
-            self.animals[2]["x"] = float(((s * 13) % 6) - 2.8)    # Snake
-            self.animals[2]["y"] = float(3.2 + ((s * 7) % 3))
-            
-            self.animals[3]["x"] = float(((s * 17) % 8) - 4.0)    # Fox
-            self.animals[3]["y"] = float(6.0 + ((s * 13) % 4))
-            
-            # Place rock near snake
-            self.rocks[0] = (self.animals[2]["x"] + 0.35, self.animals[2]["y"] + 0.2, 0.85)
-            # Place tree near deer
-            self.trees[0] = (self.animals[0]["x"] + 0.45, self.animals[0]["y"] + 0.3, 'oak')
-            # Place tree near leopard
-            self.trees[1] = (self.animals[1]["x"] - 0.40, self.animals[1]["y"] - 0.2, 'pine')
-
-        add_system_log("WORLD", f"Wildlife Biome synthesized with Seed {s} ({biome}).")
+        self.deer_sprite = cv2.bitwise_and(raw_tex, raw_tex, mask=mask)
+        self.deer_mask = mask
 
     def start(self):
         with self.lock:
@@ -363,9 +182,7 @@ class VirtualForestSimulation:
             self.w = 0.0
             self.fsm_state = "SECTOR_SCAN"
             self.fsm_timer = time.time()
-            self.current_target_id = None
-        add_system_log("SYSTEM", "Multi-Animal Jungle Camouflage Simulation Mode ACTIVE.")
-        print("\n[MISSION CONTROL] Multi-Animal Jungle Camouflage Simulation Mode ACTIVE.")
+        print("\n[MISSION CONTROL] Windows Native Interactive Simulation Mode ACTIVE.")
         print("[MISSION CONTROL] Virtual camera live. Drive with WASD or click Autonomous Patrol.\n")
 
     def stop(self):
@@ -374,7 +191,6 @@ class VirtualForestSimulation:
             self.v = 0.0
             self.w = 0.0
             self.autonomy = False
-        add_system_log("SYSTEM", "Windows Simulation stopped. Switched to Standby Radar.")
         print("\n[MISSION CONTROL] Windows Simulation stopped. Switched to Standby Radar.\n")
 
     def set_cmd_vel(self, linear_x, angular_z):
@@ -388,110 +204,78 @@ class VirtualForestSimulation:
             if self.autonomy:
                 self.fsm_state = "SECTOR_SCAN"
                 self.fsm_timer = time.time()
-                self.current_target_id = None
-                add_system_log("PATROL", "Multi-Target Autonomous Patrol Started: SECTOR_SCAN (360° Sweep).")
-                print("[AUTONOMY] Multi-Target Autonomous Patrol Started: SECTOR_SCAN")
+                print("[AUTONOMY] FSM Started: SECTOR_SCAN")
             else:
                 self.v = 0.0
                 self.w = 0.0
-                add_system_log("PATROL", "Autonomy Deactivated. Switched to Manual Teleop.")
                 print("[AUTONOMY] Autonomy Deactivated. Switched to Manual Teleop.")
 
     def update_physics(self, dt):
-        """Update robot kinematics and multi-target Autonomous Patrol FSM logic."""
+        """Update robot position and Autonomous Patrol FSM logic."""
         with self.lock:
             if not self.running:
                 return
 
-            # Compute relative metrics for all animals in the world
-            animal_metrics = []
-            for a in self.animals:
-                dx = a["x"] - self.rx
-                dy = a["y"] - self.ry
-                dist = math.sqrt(dx * dx + dy * dy)
-                rel_forward = -dx * math.sin(self.yaw) + dy * math.cos(self.yaw)
-                rel_lateral = dx * math.cos(self.yaw) + dy * math.sin(self.yaw)
-                angle_err = math.atan2(rel_lateral, max(0.1, rel_forward))
-                in_fov = (rel_forward > 0.8) and (abs(angle_err) < 0.48) and (dist < 10.0)
-                animal_metrics.append({
-                    "animal": a,
-                    "dist": dist,
-                    "rel_forward": rel_forward,
-                    "rel_lateral": rel_lateral,
-                    "angle_err": angle_err,
-                    "in_fov": in_fov
-                })
+            # Relative distance and angle to target deer
+            dx = self.deer_x - self.rx
+            dy = self.deer_y - self.ry
+            dist = math.sqrt(dx * dx + dy * dy)
+            
+            # Local coordinates of deer relative to robot camera
+            rel_forward = -dx * math.sin(self.yaw) + dy * math.cos(self.yaw)
+            rel_lateral = dx * math.cos(self.yaw) + dy * math.sin(self.yaw)
+            angle_err = math.atan2(rel_lateral, max(0.1, rel_forward))
 
             # Autonomous Patrol FSM
             if self.autonomy:
                 now = time.time()
-                fov_targets = [m for m in animal_metrics if m["in_fov"]]
-
                 if self.fsm_state == "SECTOR_SCAN":
                     # Rotate in place to search for camouflaged wildlife
                     self.v = 0.0
                     self.w = 0.35
-                    if fov_targets:
-                        # Pick closest uninspected target or closest target
-                        fov_targets.sort(key=lambda m: m["dist"])
-                        target_chosen = fov_targets[0]
-                        self.current_target_id = target_chosen["animal"]["id"]
+                    if rel_forward > 0.8 and abs(angle_err) < 0.30 and dist < 8.0:
                         self.fsm_state = "TARGET_CREEP"
                         self.fsm_timer = now
-                        species_name = target_chosen['animal']['label']
-                        dist_val = target_chosen['dist']
-                        add_system_log("TARGET", f"🎯 CAMOUFLAGE ACQUIRED: {species_name} at {dist_val:.1f}m!")
-                        add_system_log("FSM", f"Transition: SECTOR_SCAN -> TARGET_CREEP [{species_name}]")
-                        print(f"[AUTONOMY] Target Detected: {species_name}! Transition: SECTOR_SCAN -> TARGET_CREEP (Dist: {dist_val:.1f}m)")
+                        print(f"[AUTONOMY] Target Detected! Transition: SECTOR_SCAN -> TARGET_CREEP (Dist: {dist:.1f}m)")
 
                 elif self.fsm_state == "TARGET_CREEP":
-                    # Lock onto target and drive towards it while centering
-                    active_metric = next((m for m in animal_metrics if m["animal"]["id"] == self.current_target_id), None)
-                    if active_metric and active_metric["in_fov"]:
-                        self.w = -active_metric["angle_err"] * 1.6
-                        self.v = 0.28
-                        if active_metric["dist"] <= 2.2:
-                            self.fsm_state = "TARGET_VERIFICATION"
-                            self.fsm_timer = now
-                            self.v = 0.0
-                            self.w = 0.0
-                            add_system_log("FSM", f"In Range of {active_metric['animal']['label']} ({active_metric['dist']:.1f}m). Transition -> TARGET_VERIFICATION")
-                            print(f"[AUTONOMY] In Range of {active_metric['animal']['label']} (Dist: {active_metric['dist']:.1f}m). Transition: TARGET_CREEP -> TARGET_VERIFICATION")
-                    else:
-                        # Lost target or reached boundary; re-scan
-                        self.fsm_state = "SECTOR_SCAN"
+                    # Drive towards target while centering
+                    self.w = -angle_err * 1.6
+                    self.v = 0.30
+                    if dist <= 2.2:
+                        self.fsm_state = "TARGET_VERIFICATION"
                         self.fsm_timer = now
+                        self.v = 0.0
+                        self.w = 0.0
+                        print(f"[AUTONOMY] In Range. Transition: TARGET_CREEP -> TARGET_VERIFICATION (Dist: {dist:.1f}m)")
 
                 elif self.fsm_state == "TARGET_VERIFICATION":
-                    # Hold stationary to perform deep multi-spectral camouflage inspection
+                    # Stop and perform inspection
                     self.v = 0.0
                     self.w = 0.0
                     if now - self.fsm_timer > 3.0:
                         self.inspected_count += 1
-                        self.last_inspected_id = self.current_target_id
                         self.fsm_state = "SECTOR_TRACK"
                         self.fsm_timer = now
-                        add_system_log("PATROL", f"Camouflage Inspection Complete (#{self.inspected_count}). Transition -> SECTOR_TRACK")
                         print(f"[AUTONOMY] Verification Complete (#{self.inspected_count}). Transition: VERIFICATION -> SECTOR_TRACK")
 
                 elif self.fsm_state == "SECTOR_TRACK":
-                    # Reorient and track sector for 3.5 seconds, then resume scan
-                    self.v = 0.08
-                    self.w = 0.25
-                    if now - self.fsm_timer > 3.5:
+                    # Track for 4 seconds then resume scanning
+                    self.v = 0.05
+                    self.w = -angle_err * 0.8
+                    if now - self.fsm_timer > 4.0:
                         self.fsm_state = "SECTOR_SCAN"
                         self.fsm_timer = now
-                        self.current_target_id = None
-                        add_system_log("PATROL", "Sector Cleared. Resuming SECTOR_SCAN for next target.")
-                        print("[AUTONOMY] Sector Cleared. Resuming SECTOR_SCAN for next target.")
+                        print("[AUTONOMY] Sector Cleared. Resuming SECTOR_SCAN.")
 
-            # Apply kinematics
+            # Apply kinematics:
+            # Turning: w > 0 turns Left (yaw increases), w < 0 turns Right (yaw decreases)
             self.yaw = (self.yaw + self.w * dt) % (2 * math.pi)
             self.rx += (-self.v * math.sin(self.yaw)) * dt
             self.ry += (self.v * math.cos(self.yaw)) * dt
 
     def render_frame(self):
-        """Render high-resolution 640x480 robot camera perception feed with multi-animal detection."""
+        """Render high-resolution 640x480 robot camera perception feed."""
         w, h = 640, 480
         frame = np.zeros((h, w, 3), dtype=np.uint8)
 
@@ -528,209 +312,128 @@ class VirtualForestSimulation:
             if -100 < screen_gx < w + 100:
                 cv2.line(frame, (screen_gx, horizon_y), (int(320 + (screen_gx - 320) * 2.8), h), (25, 45, 20), 1)
 
-        # 3. Collect all renderable scene items for depth sorting
-        f_proj = 340.0
-        render_queue = []
-
-        # Trees
-        for tx, ty, t_type in self.trees:
+        # 3. Background Trees
+        for tx, ty in self.trees:
             tdx = tx - self.rx
             tdy = ty - self.ry
             tz = -tdx * math.sin(self.yaw) + tdy * math.cos(self.yaw)
-            tx_loc = tdx * math.cos(self.yaw) + tdy * math.sin(self.yaw)
-            if tz > 1.0:
-                render_queue.append((tz, "tree", {"x": tx_loc, "z": tz, "type": t_type}))
+            tx_local = tdx * math.cos(self.yaw) + tdy * math.sin(self.yaw)
 
-        # Rocks
-        for rx, ry, r_scale in self.rocks:
-            rdx = rx - self.rx
-            rdy = ry - self.ry
-            tz = -rdx * math.sin(self.yaw) + rdy * math.cos(self.yaw)
-            rx_loc = rdx * math.cos(self.yaw) + rdy * math.sin(self.yaw)
-            if tz > 0.8:
-                render_queue.append((tz, "rock", {"x": rx_loc, "z": tz, "scale": r_scale}))
-
-        # Animals (Deer, Leopard, Snake, Fox)
-        for a in self.animals:
-            adx = a["x"] - self.rx
-            ady = a["y"] - self.ry
-            tz = -adx * math.sin(self.yaw) + ady * math.cos(self.yaw)
-            ax_loc = adx * math.cos(self.yaw) + ady * math.sin(self.yaw)
-            dist = math.sqrt(adx * adx + ady * ady)
-            if tz > 0.8:
-                render_queue.append((tz, "animal", {"animal": a, "x": ax_loc, "z": tz, "dist": dist}))
-
-        # Sort queue: farthest elements drawn first (painter's algorithm)
-        render_queue.sort(key=lambda item: item[0], reverse=True)
-
-        # Projected animal bounding data for subsequent tactical perception overlay
-        visible_animal_projections = []
-
-        # 4. Render Scene Visuals
-        for tz, kind, data in render_queue:
-            if kind == "tree":
-                scx = int(320 + (data["x"] / tz) * f_proj)
+            if tz > 1.2:
+                f_proj = 320.0
+                scx = int(320 + (tx_local / tz) * f_proj)
                 tree_h = int((3.5 / tz) * f_proj)
                 tree_w = int(tree_h * 0.45)
                 base_y = int(horizon_y + (0.5 / tz) * f_proj)
-                if -120 < scx < (w + 120) and tree_h > 15:
-                    trunk_w = max(4, tree_w // 4)
+
+                if -100 < scx < w + 100 and tree_h > 15:
                     # Trunk
+                    trunk_w = max(4, tree_w // 4)
                     cv2.rectangle(frame, (scx - trunk_w // 2, base_y - tree_h // 2),
                                   (scx + trunk_w // 2, base_y), (15, 25, 35), -1)
                     # Canopy
                     canopy_r = max(10, tree_w)
-                    canopy_col = (20, 42, 25) if data["type"] == "pine" else (24, 48, 28)
                     cv2.circle(frame, (scx, max(30, base_y - tree_h + canopy_r // 2)),
-                               canopy_r, canopy_col, -1)
+                               canopy_r, (20, 40, 25), -1)
 
-            elif kind == "rock":
-                scx = int(320 + (data["x"] / tz) * f_proj)
-                scy = int(horizon_y + (0.35 / tz) * f_proj)
-                rock_w = int((1.4 * data["scale"] / tz) * f_proj)
-                rock_h = int((0.9 * data["scale"] / tz) * f_proj)
-                if -100 < scx < (w + 100) and rock_w > 10 and rock_h > 8:
-                    x1 = max(0, scx - rock_w // 2)
-                    y1 = max(0, scy - rock_h)
-                    x2 = min(w, x1 + rock_w)
-                    y2 = min(h, y1 + rock_h)
-                    rw, rh = x2 - x1, y2 - y1
-                    if rw > 4 and rh > 4 and "rock" in self.assets:
-                        sprite, mask = self.assets["rock"]
-                        r_sprite = cv2.resize(sprite, (rw, rh))
-                        r_mask = cv2.resize(mask, (rw, rh))
-                        inv_mask = cv2.bitwise_not(r_mask)
-                        roi = frame[y1:y2, x1:x2]
-                        bg = cv2.bitwise_and(roi, roi, mask=inv_mask)
-                        fg = cv2.bitwise_and(r_sprite, r_sprite, mask=r_mask)
-                        frame[y1:y2, x1:x2] = cv2.add(bg, fg)
+        # 4. Camouflaged Deer Object Projection
+        dx = self.deer_x - self.rx
+        dy = self.deer_y - self.ry
+        target_dist = math.sqrt(dx * dx + dy * dy)
+        
+        # Local forward (z) and lateral (x) coordinates relative to robot camera
+        # w > 0 turns Left (yaw increases), w < 0 turns Right (yaw decreases)
+        rel_forward = -dx * math.sin(self.yaw) + dy * math.cos(self.yaw)
+        rel_lateral = dx * math.cos(self.yaw) + dy * math.sin(self.yaw)
 
-            elif kind == "animal":
-                a = data["animal"]
-                scx = int(320 + (data["x"] / tz) * f_proj)
-                scy = int(horizon_y + (a["z_off"] / tz) * f_proj)
-                sp_w = int((a["scale_w"] / tz) * f_proj)
-                sp_h = int((a["scale_h"] / tz) * f_proj)
+        target_detected = False
+        target_info = None
 
-                if -120 < scx < (w + 120) and sp_w > 12 and sp_h > 12:
-                    x1 = max(0, scx - sp_w // 2)
-                    y1 = max(0, scy - sp_h)
-                    x2 = min(w, x1 + sp_w)
-                    y2 = min(h, y1 + sp_h)
-                    act_w = x2 - x1
-                    act_h = y2 - y1
+        if rel_forward > 0.8:  # Target is in front of camera lens
+            focal_len = 340.0
+            screen_cx = int(320 + (rel_lateral / rel_forward) * focal_len)
+            screen_cy = int(horizon_y + (0.2 / rel_forward) * focal_len)
+            sprite_w = int((1.35 / rel_forward) * focal_len)
+            sprite_h = int((1.10 / rel_forward) * focal_len)
 
-                    if act_w > 5 and act_h > 5 and a["texture_key"] in self.assets:
-                        sprite, mask = self.assets[a["texture_key"]]
-                        an_sprite = cv2.resize(sprite, (act_w, act_h))
-                        an_mask = cv2.resize(mask, (act_w, act_h))
-                        inv_mask = cv2.bitwise_not(an_mask)
-                        roi = frame[y1:y2, x1:x2]
-                        bg = cv2.bitwise_and(roi, roi, mask=inv_mask)
-                        fg = cv2.bitwise_and(an_sprite, an_sprite, mask=an_mask)
-                        
-                        # Apply subtle canopy shadow dappling to simulate natural concealment
-                        shadow_overlay = np.full((act_h, act_w, 3), (20, 35, 20), dtype=np.uint8)
-                        fg = cv2.addWeighted(fg, 0.88, shadow_overlay, 0.12, 0)
-                        
-                        frame[y1:y2, x1:x2] = cv2.add(bg, fg)
+            if 20 < screen_cx < (w - 20) and sprite_w > 12 and sprite_h > 12:
+                # Blit textured deer onto camera view
+                x1 = max(0, screen_cx - sprite_w // 2)
+                y1 = max(0, screen_cy - sprite_h)
+                x2 = min(w, x1 + sprite_w)
+                y2 = min(h, y1 + sprite_h)
+                actual_w = x2 - x1
+                actual_h = y2 - y1
 
-                        # Check if inside camera view for detection bounding box
-                        if 15 < scx < (w - 15) and data["dist"] <= 12.0:
-                            visible_animal_projections.append({
-                                "animal": a,
-                                "x1": x1, "y1": y1, "x2": x2, "y2": y2,
-                                "scx": scx, "scy": scy,
-                                "act_w": act_w, "act_h": act_h,
-                                "dist": data["dist"]
-                            })
+                if actual_w > 5 and actual_h > 5:
+                    deer_resized = cv2.resize(self.deer_sprite, (actual_w, actual_h))
+                    mask_resized = cv2.resize(self.deer_mask, (actual_w, actual_h))
+                    inv_mask = cv2.bitwise_not(mask_resized)
 
-        # 5. Tactical AI Multi-Target Bounding Boxes & Reticles
-        targets_in_frame = []
-        for p in visible_animal_projections:
-            a = p["animal"]
-            dist_m = p["dist"]
-            # Dynamic confidence score based on biological camouflage difficulty and distance
-            conf = max(0.55, min(0.95, a["base_conf"] - (dist_m * 0.022)))
-            
-            box_col = a["box_color"]
-            x1, y1, x2, y2 = p["x1"], p["y1"], p["x2"], p["y2"]
-            act_w = p["act_w"]
+                    roi = frame[y1:y2, x1:x2]
+                    bg = cv2.bitwise_and(roi, roi, mask=inv_mask)
+                    fg = cv2.bitwise_and(deer_resized, deer_resized, mask=mask_resized)
+                    frame[y1:y2, x1:x2] = cv2.add(bg, fg)
 
-            # Main tactical bounding rectangle
-            cv2.rectangle(frame, (x1 - 4, y1 - 4), (x2 + 4, y2 + 4), box_col, 2)
+                    # 5. Tactical AI Perception Bounding Box & HUD Lock
+                    target_detected = True
+                    conf = max(0.55, min(0.94, 0.92 - (target_dist * 0.035)))
 
-            # High-tech corner reticle brackets
-            brk_len = max(8, min(22, act_w // 4))
-            # Top-left
-            cv2.line(frame, (x1 - 4, y1 - 4), (x1 - 4 + brk_len, y1 - 4), (255, 255, 255), 2)
-            cv2.line(frame, (x1 - 4, y1 - 4), (x1 - 4, y1 - 4 + brk_len), (255, 255, 255), 2)
-            # Top-right
-            cv2.line(frame, (x2 + 4, y1 - 4), (x2 + 4 - brk_len, y1 - 4), (255, 255, 255), 2)
-            cv2.line(frame, (x2 + 4, y1 - 4), (x2 + 4, y1 - 4 + brk_len), (255, 255, 255), 2)
-            # Bottom-left
-            cv2.line(frame, (x1 - 4, y2 + 4), (x1 - 4 + brk_len, y2 + 4), (255, 255, 255), 2)
-            cv2.line(frame, (x1 - 4, y2 + 4), (x1 - 4, y2 + 4 - brk_len), (255, 255, 255), 2)
-            # Bottom-right
-            cv2.line(frame, (x2 + 4, y2 + 4), (x2 + 4 - brk_len, y2 + 4), (255, 255, 255), 2)
-            cv2.line(frame, (x2 + 4, y2 + 4), (x2 + 4, y2 + 4 - brk_len), (255, 255, 255), 2)
+                    # Tactical Neon Green Bounding Box
+                    box_color = (0, 255, 128)
+                    cv2.rectangle(frame, (x1 - 4, y1 - 4), (x2 + 4, y2 + 4), box_color, 2)
 
-            # Center target crosshair
-            ccx, ccy = (x1 + x2) // 2, (y1 + y2) // 2
-            cv2.line(frame, (ccx - 7, ccy), (ccx + 7, ccy), box_col, 1)
-            cv2.line(frame, (ccx, ccy - 7), (ccx, ccy + 7), box_col, 1)
+                    # Reticle Corner Brackets
+                    bracket_len = max(8, min(20, actual_w // 4))
+                    # Top-left
+                    cv2.line(frame, (x1 - 4, y1 - 4), (x1 - 4 + bracket_len, y1 - 4), (255, 255, 255), 2)
+                    cv2.line(frame, (x1 - 4, y1 - 4), (x1 - 4, y1 - 4 + bracket_len), (255, 255, 255), 2)
+                    # Top-right
+                    cv2.line(frame, (x2 + 4, y1 - 4), (x2 + 4 - bracket_len, y1 - 4), (255, 255, 255), 2)
+                    cv2.line(frame, (x2 + 4, y1 - 4), (x2 + 4, y1 - 4 + bracket_len), (255, 255, 255), 2)
+                    # Bottom-left
+                    cv2.line(frame, (x1 - 4, y2 + 4), (x1 - 4 + bracket_len, y2 + 4), (255, 255, 255), 2)
+                    cv2.line(frame, (x1 - 4, y2 + 4), (x1 - 4, y2 + 4 - bracket_len), (255, 255, 255), 2)
+                    # Bottom-right
+                    cv2.line(frame, (x2 + 4, y2 + 4), (x2 + 4 - bracket_len, y2 + 4), (255, 255, 255), 2)
+                    cv2.line(frame, (x2 + 4, y2 + 4), (x2 + 4, y2 + 4 - bracket_len), (255, 255, 255), 2)
 
-            # Tactical Target Banner
-            lbl_str = f"{a['label']} {int(conf * 100)}% [{dist_m:.1f}m]"
-            (tw, th), _ = cv2.getTextSize(lbl_str, cv2.FONT_HERSHEY_SIMPLEX, 0.44, 1)
-            banner_bg = (int(box_col[0] * 0.7), int(box_col[1] * 0.7), int(box_col[2] * 0.7))
-            cv2.rectangle(frame, (x1 - 4, max(18, y1 - 22)), (x1 + tw + 14, max(22, y1 - 2)), banner_bg, -1)
-            cv2.putText(frame, lbl_str, (x1 + 1, max(16, y1 - 7)),
-                        cv2.FONT_HERSHEY_SIMPLEX, 0.44, (0, 0, 0), 1, cv2.LINE_AA)
+                    # Center crosshair
+                    ccx, ccy = (x1 + x2) // 2, (y1 + y2) // 2
+                    cv2.line(frame, (ccx - 8, ccy), (ccx + 8, ccy), (0, 255, 128), 1)
+                    cv2.line(frame, (ccx, ccy - 8), (ccx, ccy + 8), (0, 255, 128), 1)
 
-            targets_in_frame.append({
-                "id": a["id"],
-                "label": a["label"],
-                "species": a["species"],
-                "icon": a["icon"],
-                "confidence": float(round(conf, 3)),
-                "distance_m": float(round(dist_m, 2)),
-                "center_x": float(p["scx"]),
-                "center_y": float(p["scy"]),
-                "camouflage_type": a["camouflage_type"],
-                "box_color": a["box_color"]
-            })
+                    # Bounding Box Label
+                    label_str = f"DEER {int(conf * 100)}% [{target_dist:.1f}m]"
+                    (tw, th), _ = cv2.getTextSize(label_str, cv2.FONT_HERSHEY_SIMPLEX, 0.48, 1)
+                    cv2.rectangle(frame, (x1 - 4, max(18, y1 - 22)), (x1 + tw + 6, max(22, y1 - 2)), (0, 180, 80), -1)
+                    cv2.putText(frame, label_str, (x1 - 1, max(16, y1 - 7)),
+                                cv2.FONT_HERSHEY_SIMPLEX, 0.48, (0, 0, 0), 1, cv2.LINE_AA)
+
+                    target_info = {
+                        "label": "DEER",
+                        "confidence": float(round(conf, 3)),
+                        "distance_m": float(round(target_dist, 2)),
+                        "center_x": float(screen_cx),
+                        "center_y": float(screen_cy)
+                    }
 
         # 6. Compass Heading Tape (Tactical HUD Overlay)
         heading_deg = int((-self.yaw * 180.0 / math.pi) % 360)
-        hud_bar_w = 260
+        hud_bar_w = 200
         hud_bar_x = (w - hud_bar_w) // 2
         cv2.rectangle(frame, (hud_bar_x, 10), (hud_bar_x + hud_bar_w, 28), (15, 23, 42), -1)
         cv2.rectangle(frame, (hud_bar_x, 10), (hud_bar_x + hud_bar_w, 28), (30, 41, 59), 1)
-        
-        hud_title = f"HDG: {heading_deg:03d}° | BIOME: JUNGLE | i5 OPTIMIZED"
-        cv2.putText(frame, hud_title, (hud_bar_x + 8, 23),
-                    cv2.FONT_HERSHEY_SIMPLEX, 0.36, (56, 189, 248), 1, cv2.LINE_AA)
-
-        # 7. Multi-Target Status Banner on Top of Screen
-        if len(targets_in_frame) > 1:
-            species_list = ", ".join([t["label"] for t in targets_in_frame])
-            banner_text = f"MULTI-TARGET CAMOUFLAGE LOCK: {len(targets_in_frame)} TARGETS ({species_list})"
-            (bw, _), _ = cv2.getTextSize(banner_text, cv2.FONT_HERSHEY_SIMPLEX, 0.38, 1)
-            bx = max(10, (w - bw) // 2)
-            cv2.rectangle(frame, (bx - 8, 34), (bx + bw + 8, 52), (10, 30, 20), -1)
-            cv2.rectangle(frame, (bx - 8, 34), (bx + bw + 8, 52), (16, 185, 129), 1)
-            cv2.putText(frame, banner_text, (bx, 47),
-                        cv2.FONT_HERSHEY_SIMPLEX, 0.38, (52, 211, 153), 1, cv2.LINE_AA)
+        cv2.putText(frame, f"HDG: {heading_deg:03d} DEG | SIM_ENGINE: WIN_NATIVE", (hud_bar_x + 10, 23),
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.38, (56, 189, 248), 1, cv2.LINE_AA)
 
         # Update Telemetry Dict
         with state_lock:
-            latest_telemetry["fps"] = 28.5
-            latest_telemetry["inference_time_ms"] = 31.8
-            latest_telemetry["target_acquired"] = len(targets_in_frame) > 0
-            latest_telemetry["target_count"] = len(targets_in_frame)
-            latest_telemetry["targets"] = targets_in_frame
-            latest_telemetry["primary_target"] = targets_in_frame[0] if targets_in_frame else None
+            latest_telemetry["fps"] = 25.0
+            latest_telemetry["inference_time_ms"] = 32.4
+            latest_telemetry["target_acquired"] = target_detected
+            latest_telemetry["target_count"] = 1 if target_detected else 0
+            latest_telemetry["primary_target"] = target_info
             latest_telemetry["fsm_state"] = self.fsm_state if self.autonomy else "MANUAL_TELEOP"
             latest_telemetry["inspected_count"] = self.inspected_count
             latest_telemetry["mode"] = "WINDOWS_SIM"
@@ -1153,15 +856,16 @@ def toggle_autonomy():
 def regenerate_world():
     data = request.get_json() or {}
     density = data.get('density', 'medium')
-    biome = data.get('biome', 'mixed')
     num_deer = data.get('num_deer', '3')
     seed = data.get('seed', '42')
 
-    # Update Windows simulation multi-animal jungle layout based on seed & biome
+    # Update Windows simulation deer position based on seed
     try:
-        sim_engine.randomize_world(seed, biome)
-    except Exception as e:
-        print(f"[REGEN] Windows sim randomization error: {e}")
+        s_int = int(seed)
+        sim_engine.deer_x = float(((s_int * 7) % 9) - 4.5)
+        sim_engine.deer_y = float(3.5 + ((s_int * 13) % 7))
+    except Exception:
+        pass
 
     script_path = os.path.join(
         os.path.dirname(os.path.dirname(os.path.abspath(__file__))),

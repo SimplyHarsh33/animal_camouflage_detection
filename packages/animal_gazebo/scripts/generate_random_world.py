@@ -20,7 +20,7 @@ import json
 def parse_args():
     parser = argparse.ArgumentParser(description="Procedural World Generator for Wildlife Camouflage")
     parser.add_argument("--seed", type=int, default=None, help="Random seed for repeatable world generation")
-    parser.add_argument("--num-deer", "--num-animals", dest="num_deer", type=int, default=4, choices=[1, 2, 3, 4, 5, 6], help="Number of camouflaged animals to spawn (1-6)")
+    parser.add_argument("--num-deer", type=int, default=3, choices=[1, 2, 3, 4], help="Number of deer to spawn (1-4)")
     parser.add_argument("--density", type=str, default="medium", choices=["low", "medium", "high"], help="Vegetation density")
     parser.add_argument("--arena-size", type=float, default=22.0, help="Arena width and height in meters")
     parser.add_argument("--output", type=str, default=None, help="Output SDF world file path")
@@ -29,7 +29,7 @@ def parse_args():
     return parser.parse_args()
 
 class ProceduralWorldGenerator:
-    def __init__(self, seed=None, num_deer=4, density="medium", arena_size=22.0, perimeter=True, shadows=False, species_pool=None):
+    def __init__(self, seed=None, num_deer=3, density="medium", arena_size=22.0, perimeter=True, shadows=False):
         self.seed = seed if seed is not None else random.randint(1000, 999999)
         self.rng = random.Random(self.seed)
         self.num_deer = num_deer
@@ -38,7 +38,6 @@ class ProceduralWorldGenerator:
         self.half_size = arena_size / 2.0
         self.perimeter = perimeter
         self.shadows = shadows
-        self.species_pool = species_pool if species_pool else ["deer", "leopard", "snake", "fox"]
 
         # Safety radius around robot spawn (0, 0)
         self.spawn_clearance_radius = 2.0
@@ -131,8 +130,8 @@ class ProceduralWorldGenerator:
                     models.append(self.place_object(f"perimeter_w_{perimeter_idx}", tree_type, -wall_dist, py, self.rng.uniform(-math.pi, math.pi), radius=0.6))
                     perimeter_idx += 1
 
-        # 2. Procedural Concealment Scenarios for Camouflaged Wildlife (Multi-Animal)
-        # We spawn animals at varying distances: Close (3–4m), Medium (5–7m), Far (7.5–9.5m)
+        # 2. Procedural Concealment Scenarios for Deer
+        # We spawn deer at varying distances: Close (3–4m), Medium (5–7m), Far (7.5–9.5m)
         ranges = [
             ("Close", 2.8, 4.2, "Light Concealment"),
             ("Medium", 4.8, 6.8, "Moderate Concealment"),
@@ -142,7 +141,6 @@ class ProceduralWorldGenerator:
 
         for i in range(self.num_deer):
             label, r_min, r_max, concealment_desc = ranges[i % len(ranges)]
-            species = self.species_pool[i % len(self.species_pool)]
             placed = False
             for attempt in range(100):
                 # Sample polar coordinates from spawn
@@ -152,12 +150,12 @@ class ProceduralWorldGenerator:
                 dy = dist * math.sin(angle)
 
                 if self.is_valid_position(dx, dy, radius=1.0):
-                    # Place the camouflaged animal
-                    animal_yaw = self.rng.uniform(-math.pi, math.pi)
-                    animal_model = self.place_object(f"{species}_{label.lower()}_{i+1}", f"model://{species}", dx, dy, animal_yaw, radius=0.9)
-                    models.append(animal_model)
+                    # Place the deer
+                    deer_yaw = self.rng.uniform(-math.pi, math.pi)
+                    deer_model = self.place_object(f"deer_{label.lower()}_{i+1}", "model://deer", dx, dy, deer_yaw, radius=0.9)
+                    models.append(deer_model)
 
-                    # Add strategic camouflage cover near the animal (rock or tree)
+                    # Add strategic camouflage cover near the deer (rock or tree)
                     cover_type = self.rng.choice(["rock", "oak_tree", "pine_tree"])
                     cover_dist = self.rng.uniform(0.6, 1.2)
                     cover_angle = angle + self.rng.uniform(-0.5, 0.5)
@@ -166,12 +164,11 @@ class ProceduralWorldGenerator:
 
                     if self.is_valid_position(cx, cy, radius=0.8):
                         cover_uri = f"model://{cover_type}"
-                        cover_model = self.place_object(f"cover_{species}_{i+1}", cover_uri, cx, cy, self.rng.uniform(-math.pi, math.pi), radius=0.8)
+                        cover_model = self.place_object(f"cover_{label.lower()}_{i+1}", cover_uri, cx, cy, self.rng.uniform(-math.pi, math.pi), radius=0.8)
                         models.append(cover_model)
 
                     self.deer_metadata.append({
-                        "name": animal_model["name"],
-                        "species": species.upper(),
+                        "name": deer_model["name"],
                         "tier": label,
                         "distance_m": round(dist, 2),
                         "position": [round(dx, 2), round(dy, 2)],
@@ -302,12 +299,11 @@ def main():
     print(f"Target file: {output_path}")
     print(f"Vegetation Density: {args.density.upper()}")
     print(f"Total Objects Placed: {len(generator.placed_objects)}")
-    print(f"\n🐾 Camouflaged Wildlife Deployment Summary:")
-    print("--------------------------------------------------------------------------------")
+    print(f"\n🦌 Camouflaged Deer Deployment Summary:")
+    print("------------------------------------------------------------")
     for d in generator.deer_metadata:
-        species_str = d.get('species', 'DEER')
-        print(f"  • {d['name']:<18} | Species: {species_str:<8} | Tier: {d['tier']:<8} | Dist: {d['distance_m']:>4}m | Pos: ({d['position'][0]:>5}, {d['position'][1]:>5}) | {d['concealment']}")
-    print("================================================================================\n")
+        print(f"  • {d['name']:<18} | Tier: {d['tier']:<8} | Dist: {d['distance_m']:>4}m | Pos: ({d['position'][0]:>5}, {d['position'][1]:>5}) | {d['concealment']}")
+    print("============================================================\n")
 
 if __name__ == "__main__":
     main()
