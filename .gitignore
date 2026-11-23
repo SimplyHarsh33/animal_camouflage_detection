@@ -3,11 +3,15 @@ __pycache__/
 *.py[cod]
 *.pyo
 
-# Model weight files (too large for GitHub)
+# Model weight files (general)
 *.pt
 *.pth
 *.onnx
 *.engine
+
+# Allow weights folder and weight files in training/weights/
+!training/weights/
+!training/weights/**
 
 # Training output folders
 training/runs/
@@ -17,8 +21,6 @@ training/dataset/images/*/*
 training/dataset/labels/*/*
 !training/dataset/labels/*/.gitkeep
 training/dataset/debug_vis/
-training/weights/*
-!training/weights/.gitkeep
 
 # ROS 2 build artifacts
 build/
